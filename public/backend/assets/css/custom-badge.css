@@ -1,0 +1,420 @@
+/* =========================================================
+   BADGE SYSTEM
+   Bootstrap 4 Compatible
+   ---------------------------------------------------------
+   Types:
+   1. Outline  : badge-outline-success
+   2. Light    : badge-light-success
+   3. Solid    : badge-solid-success
+   4. Gradient : badge-gradient-success
+========================================================= */
+
+
+/* =========================================================
+   COMMON
+========================================================= */
+
+.badge[class*="badge-outline-"],
+.badge[class*="badge-light-"],
+.badge[class*="badge-solid-"],
+.badge[class*="badge-gradient-"] {
+    font-weight: 500;
+    border-radius: 4px;
+    transition: all .2s ease;
+}
+
+
+/* =========================================================
+   1. OUTLINE BADGES
+========================================================= */
+
+.badge[class*="badge-outline-"] {
+    background: transparent !important;
+    border: 1px solid currentColor !important;
+}
+
+
+/* Primary */
+.badge-outline-primary {
+    color: #6366f1 !important;
+}
+
+/* Success */
+.badge-outline-success {
+    color: #15803d !important;
+}
+
+/* Danger */
+.badge-outline-danger {
+    color: #ef4444 !important;
+}
+
+/* Warning */
+.badge-outline-warning {
+    color: #d97706 !important;
+}
+
+/* Info */
+.badge-outline-info {
+    color: #0d3459 !important;
+}
+
+/* Secondary */
+.badge-outline-secondary {
+    color: #64748b !important;
+}
+
+/* Blue Gray */
+.badge-outline-blue-gray {
+    color: #7393B3 !important;
+}
+
+/* Yellow */
+.badge-outline-yellow {
+    color: #d99f00 !important;
+}
+
+/* Navy */
+.badge-outline-navy {
+    color: #0f172a !important;
+}
+
+/* Blue */
+.badge-outline-blue {
+    color: #0000A3 !important;
+}
+
+/* Maroon */
+.badge-outline-maroon {
+    color: #ff3300 !important;
+}
+
+
+/* Outline Hover */
+
+.badge-outline-primary:hover {
+    background: rgba(99, 102, 241, .08) !important;
+}
+
+.badge-outline-success:hover {
+    background: rgba(21, 128, 61, .08) !important;
+}
+
+.badge-outline-danger:hover {
+    background: rgba(239, 68, 68, .08) !important;
+}
+
+.badge-outline-warning:hover {
+    background: rgba(217, 119, 6, .08) !important;
+}
+
+.badge-outline-info:hover {
+    background: rgba(13, 52, 89, .08) !important;
+}
+
+.badge-outline-secondary:hover {
+    background: rgba(100, 116, 139, .08) !important;
+}
+
+.badge-outline-blue-gray:hover {
+    background: rgba(115, 147, 179, .08) !important;
+}
+
+.badge-outline-yellow:hover {
+    background: rgba(217, 159, 0, .10) !important;
+}
+
+.badge-outline-navy:hover {
+    background: rgba(15, 23, 42, .08) !important;
+}
+
+.badge-outline-blue:hover {
+    background: rgba(0, 0, 163, .08) !important;
+}
+
+.badge-outline-maroon:hover {
+    background: rgba(255, 51, 0, .08) !important;
+}
+
+
+/* =========================================================
+   2. LIGHT / SOFT BADGES
+========================================================= */
+
+.badge-light-primary {
+    background-color: rgba(99, 102, 241, .15) !important;
+    color: #4338ca !important;
+}
+
+.badge-light-success {
+    background-color: rgba(34, 197, 94, .15) !important;
+    color: #15803d !important;
+}
+
+.badge-light-danger {
+    background-color: rgba(239, 68, 68, .15) !important;
+    color: #b91c1c !important;
+}
+
+.badge-light-warning {
+    background-color: rgba(245, 158, 11, .15) !important;
+    color: #92400e !important;
+}
+
+.badge-light-info {
+    background-color: rgba(14, 165, 233, .15) !important;
+    color: #075985 !important;
+}
+
+.badge-light-secondary {
+    background-color: rgba(100, 116, 139, .15) !important;
+    color: #475569 !important;
+}
+
+.badge-light-blue-gray {
+    background-color: rgba(115, 147, 179, .15) !important;
+    color: #526d82 !important;
+}
+
+.badge-light-yellow {
+    background-color: rgba(250, 204, 21, .18) !important;
+    color: #854d0e !important;
+}
+
+.badge-light-navy {
+    background-color: rgba(15, 23, 42, .10) !important;
+    color: #0f172a !important;
+}
+
+.badge-light-blue {
+    background-color: rgba(37, 99, 235, .15) !important;
+    color: #1d4ed8 !important;
+}
+
+.badge-light-maroon {
+    background-color: rgba(159, 18, 57, .15) !important;
+    color: #9f1239 !important;
+}
+
+
+/* =========================================================
+   3. SOLID BADGES
+========================================================= */
+
+[class*="badge-solid-"] {
+    border: 0 !important;
+}
+
+
+/* Primary */
+.badge-solid-primary {
+    color: #fff !important;
+    background-color: #4f46e5 !important;
+}
+
+/* Success */
+.badge-solid-success {
+    color: #fff !important;
+    background-color: #15803d !important;
+}
+
+/* Danger */
+.badge-solid-danger {
+    color: #fff !important;
+    background-color: #dc2626 !important;
+}
+
+/* Warning */
+.badge-solid-warning {
+    color: #422006 !important;
+    background-color: #f59e0b !important;
+}
+
+/* Info */
+.badge-solid-info {
+    color: #fff !important;
+    background-color: #0369a1 !important;
+}
+
+/* Secondary */
+.badge-solid-secondary {
+    color: #fff !important;
+    background-color: #64748b !important;
+}
+
+/* Blue Gray */
+.badge-solid-blue-gray {
+    color: #fff !important;
+    background-color: #526d82 !important;
+}
+
+/* Yellow */
+.badge-solid-yellow {
+    color: #422006 !important;
+    background-color: #fbc00e !important;
+}
+
+/* Navy */
+.badge-solid-navy {
+    color: #fff !important;
+    background-color: #0f172a !important;
+}
+
+/* Blue */
+.badge-solid-blue {
+    color: #fff !important;
+    background-color: #1d4ed8 !important;
+}
+
+/* Maroon */
+.badge-solid-maroon {
+    color: #fff !important;
+    background-color: #9f1239 !important;
+}
+
+
+/* =========================================================
+   4. GRADIENT BADGES
+========================================================= */
+
+[class*="badge-gradient-"] {
+    border: 0 !important;
+}
+
+
+/* Primary */
+.badge-gradient-primary {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #6366f1 0%,
+        #4338ca 100%
+    ) !important;
+}
+
+/* Success */
+.badge-gradient-success {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #34d399 0%,
+        #15803d 100%
+    ) !important;
+}
+
+/* Danger */
+.badge-gradient-danger {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #fb7185 0%,
+        #be123c 100%
+    ) !important;
+}
+
+/* Warning */
+.badge-gradient-warning {
+    color: #422006 !important;
+    background: linear-gradient(
+        135deg,
+        #fbbf24 0%,
+        #d97706 100%
+    ) !important;
+}
+
+/* Info */
+.badge-gradient-info {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #38bdf8 0%,
+        #0369a1 100%
+    ) !important;
+}
+
+/* Secondary */
+.badge-gradient-secondary {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #94a3b8 0%,
+        #475569 100%
+    ) !important;
+}
+
+/* Blue Gray */
+.badge-gradient-blue-gray {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #94a3b8 0%,
+        #526d82 100%
+    ) !important;
+}
+
+/* Navy */
+.badge-gradient-navy {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #1e293b 0%,
+        #020617 100%
+    ) !important;
+}
+
+/* Blue */
+.badge-gradient-blue {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #3b82f6 0%,
+        #1d4ed8 100%
+    ) !important;
+}
+
+/* Maroon */
+.badge-gradient-maroon {
+    color: #fff !important;
+    background: linear-gradient(
+        135deg,
+        #f43f5e 0%,
+        #9f1239 100%
+    ) !important;
+}
+
+/* Yellow */
+.badge-gradient-yellow {
+    color: #422006 !important;
+    background: linear-gradient(
+        135deg,
+        #fde047 0%,
+        #eab308 100%
+    ) !important;
+}
+
+
+/* DistriHub */
+.badge-gradient-distrihub {
+    color: #fff !important;
+    background: linear-gradient(
+        90deg,
+        #e91e63 0%,
+        #9c27b0 50%,
+        #3157f5 100%
+    ) !important;
+}
+
+
+/* =========================================================
+   5. HOVER EFFECTS
+========================================================= */
+
+[class*="badge-solid-"]:hover,
+[class*="badge-gradient-"]:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+[class*="badge-light-"]:hover {
+    filter: brightness(.97);
+}

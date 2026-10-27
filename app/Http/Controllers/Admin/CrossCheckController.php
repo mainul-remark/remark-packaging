@@ -25,13 +25,16 @@ class CrossCheckController extends Controller
     }
 
     /** Finds a carton by its label code (the carton number) with everything the checker needs to see. */
-    public function lookup(Request $request): JsonResponse
+    public function lookup(Request $request, CrossCheckCarton $crossCheck): JsonResponse
     {
         $code = trim($request->string('code')->toString());
         $carton = Carton::query()->with(['order.customer', 'order.destination', 'cartonType', 'packer:id,name', 'items.product.barcodes'])
             ->where('carton_number', $code)->first();
         if (! $carton) {
             return response()->json(['message' => "No carton found for {$code}."], 404);
+        }
+        if ($shortfall = $crossCheck->packingShortfallMessage($carton)) {
+            return response()->json(['message' => $shortfall, 'code' => 'ORDER_NOT_FULLY_PACKED'], 409);
         }
         $decision = CartonCrossCheckDecision::query()->where('carton_id', $carton->id)->with('decider:id,name')->latest('decided_at')->first();
         $recorded = $carton->verified_weight_g ?? $carton->manual_weight_g ?? $carton->machine_weight_g;

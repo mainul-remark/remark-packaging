@@ -67,6 +67,10 @@
             <span><small>Packed</small><strong id="invoice-packed">0</strong></span>
             <span><small>Remaining</small><strong id="invoice-remaining">0</strong></span>
           </div>
+          <section class="packed-cartons" id="packed-cartons" aria-labelledby="packed-cartons-title" hidden>
+            <div class="packed-cartons-heading"><div><span class="step-kicker">Packed cartons</span><h3 id="packed-cartons-title">Already packed</h3></div><span class="line-count" id="packed-cartons-count">0 cartons</span></div>
+            <div class="packed-cartons-list" id="packed-cartons-list"></div>
+          </section>
         </aside>
 
         <div class="carton-workspace">

@@ -31,13 +31,35 @@ class CrossCheckCarton
     /** A carton is cross-checked only once its whole order is packed. */
     public function assertFullyPacked(Carton $carton): void
     {
+        $message = $this->packingShortfallMessage($carton);
+        if ($message !== null) {
+            throw new PackagingException('ORDER_NOT_FULLY_PACKED', $message, ['order_id' => $carton->order_id], 409);
+        }
+    }
+
+    /** Explains what is still unpacked on the carton's order, or null when every product line is fully in cartons. */
+    public function packingShortfallMessage(Carton $carton): ?string
+    {
+        $required = 0.0;
+        $packedTotal = 0.0;
+        $productsShort = 0;
         foreach (OrderItem::query()->where('order_id', $carton->order_id)->get() as $line) {
-            $packed = CartonItem::query()->join('cartons', 'cartons.id', '=', 'carton_items.carton_id')
+            $packed = (float) CartonItem::query()->join('cartons', 'cartons.id', '=', 'carton_items.carton_id')
                 ->where('cartons.status', '!=', 'CANCELLED')->where('carton_items.order_item_id', $line->id)->sum('carton_items.quantity');
-            if (bccomp(number_format((float) $packed, 3, '.', ''), (string) $line->required_quantity, 3) < 0) {
-                throw new PackagingException('ORDER_NOT_FULLY_PACKED', 'This carton can be cross-checked once every product on its order is packed.', ['order_id' => $carton->order_id, 'sku' => $line->original_sku], 409);
+            $lineRequired = (float) $line->required_quantity;
+            $required += $lineRequired;
+            $packedTotal += min($packed, $lineRequired);
+            if (bccomp(number_format($packed, 3, '.', ''), (string) $line->required_quantity, 3) < 0) {
+                $productsShort++;
             }
         }
+        if ($productsShort === 0) {
+            return null;
+        }
+        $fmt = fn (float $value): string => number_format($value, 3) === number_format(round($value), 3) ? number_format($value, 0) : rtrim(rtrim(number_format($value, 3), '0'), '.');
+        $order = $carton->order->order_number;
+
+        return "Packing not finished. Work order {$order} is not fully packed yet: {$fmt($packedTotal)} of {$fmt($required)} units are in cartons, {$fmt($required - $packedTotal)} still to pack across {$productsShort} ".($productsShort === 1 ? 'product' : 'products').'. Finish packing this work order, then scan this carton again.';
     }
 
     /** Records the checker's own re-weigh. */

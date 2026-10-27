@@ -176,8 +176,9 @@ class PackageStationController extends Controller
                 'id' => (string) $material->id, 'code' => $material->code, 'name' => $material->name,
                 'weight' => (float) $material->reference_weight_g, 'tolerance' => (float) $material->tolerance_g,
             ]),
-            'existingCartons' => Carton::query()->where('order_id', $order->id)->where('status', '!=', CartonStatus::CANCELLED->value)->orderByDesc('id')->limit(100)->get()->map(fn (Carton $carton): array => [
+            'existingCartons' => Carton::query()->with('cartonType')->where('order_id', $order->id)->where('status', '!=', CartonStatus::CANCELLED->value)->orderByDesc('id')->limit(100)->get()->map(fn (Carton $carton): array => [
                 'number' => $carton->carton_number, 'units' => (float) $carton->unit_count, 'type' => ucfirst(strtolower($carton->packaging_mode->value)),
+                'cartonType' => $carton->cartonType?->name ?? $carton->cartonType?->code ?? '—',
                 'status' => str_replace('_', ' ', $carton->status->value), 'weight' => (float) ($carton->verified_weight_g ?? $carton->system_weight_g ?? 0),
             ]),
         ];

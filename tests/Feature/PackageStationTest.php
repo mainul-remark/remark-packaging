@@ -43,6 +43,17 @@ it('lists open orders and opens the workspace for one', function (): void {
     $this->get(route('package-station', ['order' => $this->order->id]))->assertOk()->assertSee('Fresh Mart Superstores');
 });
 
+it('includes existing carton barcodes, carton types, and quantities in the workspace', function (): void {
+    storeCartons([cartonSpec()])->assertCreated();
+
+    $this->get(route('package-station', ['order' => $this->order->id]))
+        ->assertOk()
+        ->assertSee('Already packed')
+        ->assertSee('SO-1001-ASO-01')
+        ->assertSee(CartonType::query()->where('code', 'MEDIUM')->value('name'))
+        ->assertSee('"units":10', false);
+});
+
 it('creates a carton with the system weight and limits computed from governed data', function (): void {
     storeCartons([cartonSpec()])->assertCreated()->assertJsonPath('data.cartons.0.carton_number', 'SO-1001-ASO-01');
 

@@ -243,6 +243,19 @@ function cartonsNeededLabel(product) {
   return `<small class="carton-need" title="${number(perCarton)} units per carton">Total: ${parts.join(" + ")}</small>`;
 }
 
+function renderPackedCartons() {
+  const section = document.querySelector("#packed-cartons");
+  if (!section) return;
+  const cartons = state.data.existingCartons || [];
+  section.hidden = !state.data.workOrder.id || cartons.length === 0;
+  $("#packed-cartons-count").textContent = `${cartons.length} carton${cartons.length === 1 ? "" : "s"}`;
+  $("#packed-cartons-list").innerHTML = cartons.map(carton => `<article class="packed-carton-row">
+    <span class="packed-carton-icon"><i class="mdi mdi-barcode"></i></span>
+    <span class="packed-carton-copy"><strong>${escapeHtml(carton.number)}</strong><small>${escapeHtml(carton.cartonType || carton.type || "—")}</small></span>
+    <span class="packed-carton-quantity"><b>${number(carton.units)}</b><small>${Number(carton.units) === 1 ? "item" : "items"}</small></span>
+  </article>`).join("");
+}
+
 function renderInvoiceProducts(filter = "") {
   if (!state.data.workOrder.id) return renderWorkOrderPicker(filter);
   $("#invoice-products-title").textContent = "Products to pack";
@@ -266,6 +279,7 @@ function renderInvoiceProducts(filter = "") {
   $("#invoice-remaining").textContent = number(totals.ordered - totals.packed);
   $("#progress-label").textContent = `${number(totals.packed)} / ${number(totals.ordered)} units`;
   $("#progress-bar").style.width = `${totals.ordered ? totals.packed / totals.ordered * 100 : 0}%`;
+  renderPackedCartons();
 }
 
 // Looks an invoice or order number up on the server, then opens that order.
@@ -430,7 +444,13 @@ function renderProductSuggestions() {
   productSearch.matches = matchProducts(term);
   if (productSearch.active >= productSearch.matches.length) productSearch.active = -1;
   box.innerHTML = productSearch.matches.length
-    ? productSearch.matches.map((product, index) => `<div class="product-suggestion${index === productSearch.active ? " active" : ""}" role="option" data-id="${product.id}" aria-disabled="${remaining(product) === 0}">${escapeHtml(product.sku)} · ${escapeHtml(product.name)}<small>${remaining(product)} left</small></div>`).join("")
+    ? productSearch.matches.map((product, index) => {
+      // In sorted mode a product with less than one full carton left cannot be picked; it stays listed, greyed out, with the reason.
+      const belowPackSize = state.mode === "sorted" && remaining(product) > 0 && maxSortedCartons(product) < 1;
+      const disabled = remaining(product) === 0 || belowPackSize;
+      const note = belowPackSize ? `${number(remaining(product))} left · less than ${number(sortedPackSize(product)) || "one"} per carton` : `${remaining(product)} left`;
+      return `<div class="product-suggestion${index === productSearch.active ? " active" : ""}" role="option" data-id="${product.id}" aria-disabled="${disabled}"${belowPackSize ? ` title="Less than one full carton remains. Pack it in an assorted carton."` : ""}>${escapeHtml(product.sku)} · ${escapeHtml(product.name)}<small>${note}</small></div>`;
+    }).join("")
     : `<div class="product-suggestions-empty">${escapeHtml(notFoundMessage(term))}</div>`;
   box.hidden = false;
   $("#product-select").setAttribute("aria-expanded", "true");
@@ -880,6 +900,7 @@ function addValidatedCarton() {
   const units = unitsPerCarton();
   const calculatedWeight = currentWeight();
   const cartonMode = state.mode;
+  const cartonType = getCartonType($("#carton-type").value);
   lines.forEach(line => { const product = getProduct(line.productId); product.packed = Math.min(product.ordered, product.packed + Number(line.quantity) * copies); });
   const cartonNumbers = Array.from({ length: copies }, (_, index) => copies > 1
     ? `${state.data.workOrder.number}-${state.activeDraft.number}-${index + 1}`
@@ -899,7 +920,7 @@ function addValidatedCarton() {
     ...(weightAck ? { weight_flag_acknowledged: true } : {})
   };
   cartonNumbers.slice().reverse().forEach(cartonNumber => {
-    const carton = { number: cartonNumber, weightFlag: weightAck?.flag || null, units, type: cartonMode === "sorted" ? "Sorted" : "Assorted", status: "CONTENTS VERIFIED", weight: manual || calculatedWeight, invoice: state.data.workOrder.invoice, workOrder: state.data.workOrder.number, destination: state.data.workOrder.destination, contents };
+    const carton = { number: cartonNumber, weightFlag: weightAck?.flag || null, units, type: cartonMode === "sorted" ? "Sorted" : "Assorted", cartonType: cartonType?.name || cartonType?.code || "—", status: "CONTENTS VERIFIED", weight: manual || calculatedWeight, invoice: state.data.workOrder.invoice, workOrder: state.data.workOrder.number, destination: state.data.workOrder.destination, contents };
     state.data.existingCartons.unshift(carton);
     state.sessionCartons.unshift(carton);
   });

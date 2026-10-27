@@ -15,6 +15,7 @@ class Carton extends Model
         'carton_number',
         'sscc',
         'seal_number',
+        'box_number',
         'order_id',
         'carton_type_id',
         'packaging_mode',

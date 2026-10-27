@@ -26,7 +26,7 @@ class PackageStationController extends Controller
     public function index(Request $request): View
     {
         $selected = $request->integer('order');
-        $order = $selected ? Order::query()->with(['customer', 'destination', 'items.product.barcodes'])->findOrFail($selected) : null;
+        $order = $selected ? Order::query()->with(['customer', 'destination', 'items.product.barcodes', 'items.product.brand'])->findOrFail($selected) : null;
         $packable = $this->packableOrders();
 
         return view('admin.package-station.index', [
@@ -34,6 +34,7 @@ class PackageStationController extends Controller
             'data' => $order ? $this->workspace($order) : $this->emptyWorkspace(),
             'orders' => $order ? [] : $packable['rows'],
             'orderTotal' => $packable['total'],
+            'labelConfig' => config('packaging.label'),
         ]);
     }
 
@@ -80,6 +81,7 @@ class PackageStationController extends Controller
             'cartons' => array_map(fn (Carton $carton): array => [
                 'id' => $carton->id,
                 'carton_number' => $carton->carton_number,
+                'box_number' => $carton->box_number,
                 'unit_count' => (float) $carton->unit_count,
                 'system_weight_g' => (float) $carton->system_weight_g,
                 'weight_tolerance_lower_g' => (float) $carton->weight_tolerance_lower_g,
@@ -102,7 +104,7 @@ class PackageStationController extends Controller
             'rows' => $orders->map(fn (Order $order): array => [
                 'id' => (string) $order->id,
                 'number' => $order->order_number,
-                'order' => $order->invoice_number ?? $order->customer->name,
+                'order' => $order->customer->name,
                 'status' => str_replace('_', ' ', $order->status),
                 'lines' => $order->items_count,
                 'units' => (float) $order->required_units,
@@ -144,6 +146,7 @@ class PackageStationController extends Controller
                 'lowerTolerance' => (float) ($specs[$item->product_id]->lower_tolerance_g ?? 0),
                 'upperTolerance' => (float) ($specs[$item->product_id]->upper_tolerance_g ?? 0),
                 'unitsPerCarton' => (int) $item->product->units_per_carton,
+                'brand' => $item->product->brand?->name ?? '—',
                 'ordered' => (float) $item->required_quantity,
                 'packed' => $packed[$item->id] ?? 0.0,
                 'color' => self::COLORS[$index % count(self::COLORS)],
@@ -154,7 +157,7 @@ class PackageStationController extends Controller
             'workOrder' => [
                 'id' => (string) $order->id,
                 'number' => $order->order_number,
-                'invoice' => $order->invoice_number ?? '—',
+                'invoice' => $order->order_number,
                 'order' => $order->order_number,
                 'customer' => $order->customer->name,
                 'destination' => $order->destination->name,

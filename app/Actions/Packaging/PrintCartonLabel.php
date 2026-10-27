@@ -37,6 +37,7 @@ class PrintCartonLabel
             'order_number' => $carton->order->order_number,
             'invoice_number' => $carton->order->invoice_number,
             'carton_number' => $carton->carton_number,
+            'box_number' => $carton->box_number,
             'carton_sequence' => $sequence.' of '.$active->count(),
             'carton_type' => $carton->cartonType?->name,
             'sku_count' => $items->pluck('product_id')->unique()->count(),

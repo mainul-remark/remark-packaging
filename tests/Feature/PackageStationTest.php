@@ -44,7 +44,7 @@ it('lists open orders and opens the workspace for one', function (): void {
 });
 
 it('creates a carton with the system weight and limits computed from governed data', function (): void {
-    storeCartons([cartonSpec()])->assertCreated()->assertJsonPath('data.cartons.0.carton_number', 'SO-1001-C001');
+    storeCartons([cartonSpec()])->assertCreated()->assertJsonPath('data.cartons.0.carton_number', 'SO-1001-ASO-01');
 
     $carton = Carton::query()->firstOrFail();
     // 10 x 1020 g rice + 320 g medium carton tare + 45 g tape.
@@ -59,7 +59,7 @@ it('creates a carton with the system weight and limits computed from governed da
 it('expands identical copies into separately numbered cartons', function (): void {
     storeCartons([cartonSpec(['copies' => 3])])->assertCreated();
 
-    expect(Carton::query()->orderBy('id')->pluck('carton_number')->all())->toBe(['SO-1001-C001', 'SO-1001-C002', 'SO-1001-C003']);
+    expect(Carton::query()->orderBy('id')->pluck('carton_number')->all())->toBe(['SO-1001-ASO-01', 'SO-1001-ASO-02', 'SO-1001-ASO-03']);
 });
 
 it('replays a batch with the same idempotency key without creating cartons twice', function (): void {
@@ -106,7 +106,9 @@ it('saves sorted cartons that hold a single product as identical copies', functi
     // RICE-1KG packs 12 per carton, so two copies take 24 units.
     storeCartons([cartonSpec(['packaging_mode' => 'SORTED', 'copies' => 2, 'materials' => [], 'items' => [['order_item_id' => $this->riceLine->id, 'quantity' => 12]]])])->assertCreated();
 
-    expect(Carton::query()->pluck('packaging_mode')->map->value->unique()->all())->toBe(['SORTED'])
+    expect(Carton::query()->orderBy('id')->pluck('box_number')->all())->toBe(['SO-01', 'SO-02'])
+        ->and(Carton::query()->orderBy('id')->pluck('carton_number')->all())->toBe(['SO-1001-RICE-1KG-SO-01', 'SO-1001-RICE-1KG-SO-02'])
+        ->and(Carton::query()->pluck('packaging_mode')->map->value->unique()->all())->toBe(['SORTED'])
         ->and(Carton::query()->count())->toBe(2)
         ->and(Carton::query()->pluck('unit_count')->map(fn ($units): float => (float) $units)->all())->toBe([12.0, 12.0]);
 });
@@ -132,4 +134,18 @@ it('defaults to an assorted carton when no packaging mode is sent', function ():
     storeCartons([cartonSpec()])->assertCreated();
 
     expect(Carton::query()->firstOrFail()->packaging_mode->value)->toBe('ASSORTED');
+});
+
+it('numbers sorted cartons per product and assorted cartons per order', function (): void {
+    $oil = $this->order->items()->where('original_sku', 'OIL-1L')->firstOrFail();
+    $sorted = fn ($line, int $copies): array => cartonSpec(['packaging_mode' => 'SORTED', 'copies' => $copies, 'materials' => [], 'items' => [['order_item_id' => $line->id, 'quantity' => 12]]]);
+
+    $assorted = cartonSpec(['items' => [['order_item_id' => $this->riceLine->id, 'quantity' => 2]]]);
+
+    storeCartons([$sorted($this->riceLine, 2), $sorted($oil, 1), $assorted, $assorted])->assertCreated();
+    storeCartons([$sorted($this->riceLine, 1), $assorted])->assertCreated();
+
+    expect(Carton::query()->orderBy('id')->pluck('box_number')->all())->toBe(['SO-01', 'SO-02', 'SO-01', 'ASO-01', 'ASO-02', 'SO-03', 'ASO-03'])
+        ->and(Carton::query()->where('box_number', 'SO-03')->value('carton_number'))->toBe('SO-1001-RICE-1KG-SO-03')
+        ->and(Carton::query()->where('box_number', 'ASO-03')->value('carton_number'))->toBe('SO-1001-ASO-03');
 });

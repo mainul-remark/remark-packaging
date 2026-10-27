@@ -96,14 +96,16 @@
                   <div class="mode-grid">
                       <label class="mode-card">
                           <input type="radio" name="carton-mode" value="sorted">
-                          <span class="mode-icon">▥</span>
-                          <span><strong>Sorted carton <i class="info-tip" tabindex="0" role="img" aria-label="One product per carton; make several identical cartons at once." data-tip="One product per carton; make several identical cartons at once.">i</i></strong><small>One product (SKU) packed into one or more identical cartons.</small></span>
+                          <span class="mode-icon"><i class="mdi mdi-package-variant-closed" aria-hidden="true"></i></span>
+                          <span class="mode-copy"><strong>Sorted carton <i class="info-tip" tabindex="0" role="img" aria-label="One product per carton; make several identical cartons at once." data-tip="One product per carton; make several identical cartons at once.">i</i></strong><small>One product (SKU) packed into one or more identical cartons.</small></span>
+                          <svg class="mode-art" viewBox="0 0 96 58" aria-hidden="true" focusable="false"><path d="M25 22h48l-5 27H30z" fill="#c98b4d"/><path d="M25 22 10 31l18 4 12-13zm48 0 14 10-18 4-13-14z" fill="#e6b875"/><path d="M40 22 31 12l-20 18 17 4zm16 0 9-11 22 20-18 4z" fill="#f1ca91"/><g fill="#2f8fd0" stroke="#d8efff" stroke-width="1"><rect x="34" y="18" width="12" height="9" rx="1"/><rect x="47" y="18" width="12" height="9" rx="1"/><rect x="40" y="28" width="12" height="9" rx="1"/><rect x="53" y="28" width="12" height="9" rx="1"/></g><rect x="41" y="39" width="19" height="7" rx="1" fill="#fff"/><text x="50.5" y="44" text-anchor="middle" font-size="4" font-weight="700" fill="#365164">SKU-01</text></svg>
                           <span class="radio-mark"></span>
                       </label>
                       <label class="mode-card">
                           <input type="radio" name="carton-mode" value="assorted">
-                          <span class="mode-icon assorted-icon">▦</span>
-                          <span><strong>Assorted carton <i class="info-tip" tabindex="0" role="img" aria-label="Choose the carton, packaging items, and invoice products below." data-tip="Choose the carton, packaging items, and invoice products below.">i</i></strong><small>Build a new carton using multiple products and packaging items.</small></span>
+                          <span class="mode-icon assorted-icon"><i class="mdi mdi-package-variant" aria-hidden="true"></i></span>
+                          <span class="mode-copy"><strong>Assorted carton <i class="info-tip" tabindex="0" role="img" aria-label="Choose the carton, packaging items, and invoice products below." data-tip="Choose the carton, packaging items, and invoice products below.">i</i></strong><small>Build a new carton using multiple products and packaging items.</small></span>
+                          <svg class="mode-art" viewBox="0 0 96 58" aria-hidden="true" focusable="false"><path d="M25 22h48l-5 27H30z" fill="#c98b4d"/><path d="M25 22 10 31l18 4 12-13zm48 0 14 10-18 4-13-14z" fill="#e6b875"/><path d="M40 22 31 12l-20 18 17 4zm16 0 9-11 22 20-18 4z" fill="#f1ca91"/><g stroke="#fff" stroke-width="1"><rect x="34" y="18" width="12" height="11" rx="1" fill="#2f8fd0"/><rect x="47" y="16" width="12" height="13" rx="1" fill="#32a66a"/><rect x="60" y="19" width="11" height="11" rx="1" fill="#ef704f"/><rect x="40" y="29" width="12" height="10" rx="1" fill="#eab545"/><rect x="53" y="29" width="12" height="10" rx="1" fill="#8d62d7"/></g><rect x="40" y="40" width="21" height="7" rx="1" fill="#fff"/><text x="50.5" y="45" text-anchor="middle" font-size="4" font-weight="700" fill="#365164">ASSORTED</text></svg>
                           <span class="radio-mark"></span>
                       </label>
                   </div>
@@ -186,11 +188,12 @@
 @endpush
 
 @push('scripts')
-<script src="{{ asset('backend/assets/libs/sweetalert2/dist/sweetalert2.all.min.js') }}"></script>
+<script src="{{ asset('pack-pos/sweetalert2.all.min.js') }}"></script>
 <script>
     window.__PACK_POS_DATA__ = @json($data);
     window.__PACK_POS_WORK_ORDERS__ = @json($orders);
     window.__PACK_POS_WORK_ORDER_TOTAL__ = {{ $orderTotal }};
+    window.__PACK_POS_LABEL__ = @json($labelConfig);
     window.__PACK_POS_URLS__ = {
         station: @json(route('package-station')),
         find: @json(route('package-station.find')),
@@ -198,5 +201,6 @@
         labelPrints: @json(route('cartons.label-prints'))
     };
 </script>
+<script src="{{ asset('pack-pos/carton-label.js') }}?v={{ filemtime(public_path('pack-pos/carton-label.js')) }}"></script>
 <script src="{{ asset('pack-pos/app.js') }}?v={{ filemtime(public_path('pack-pos/app.js')) }}"></script>
 @endpush

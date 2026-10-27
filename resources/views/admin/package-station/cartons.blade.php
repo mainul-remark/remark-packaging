@@ -68,20 +68,43 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('pack-pos/sweetalert2.all.min.js') }}"></script>
+<script src="{{ asset('pack-pos/carton-label.js') }}?v={{ filemtime(public_path('pack-pos/carton-label.js')) }}"></script>
+<script>
+    window.__PACK_POS_LABEL__ = @json($labelConfig);
+</script>
 <script>
 $(function () {
     var csrf = $('meta[name="csrf-token"]').attr('content');
     function toast(message) { var $t = $('#ct-toast').text(message).addClass('show'); clearTimeout(window.ctToastTimer); window.ctToastTimer = setTimeout(function () { $t.removeClass('show'); }, 3200); }
     $('.ct-tabs button').on('click', function () { window.location.href = $(this).data('href'); });
+    // A popup confirms the print; a reprint also asks for a reason, which is saved with the print record.
+    // The label then prints from a hidden frame, so the operator stays on this page.
     $('.ct-print').on('click', function () {
-        var $button = $(this), reason = null;
-        if (Number($button.data('printed')) > 0) {
-            reason = window.prompt('This label was already printed. Reason for reprint:');
-            if (!reason) { return; }
-        }
-        $.ajax({ url: $button.data('print'), method: 'POST', dataType: 'json', data: { reason: reason }, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } })
-            .done(function (response) { window.open(response.data.url, '_blank'); $button.data('printed', response.data.copy_number).html('Reprint<br>label'); })
-            .fail(function (xhr) { toast((xhr.responseJSON || {}).message || 'Could not print the label.'); });
+        var $button = $(this), number = $button.data('number'), reprint = Number($button.data('printed')) > 0;
+        Swal.fire({
+            icon: reprint ? 'warning' : 'question',
+            title: reprint ? 'Reprint label' : 'Print label',
+            html: reprint ? 'The label for <b>' + $('<div>').text(number).html() + '</b> was already printed. Enter the reason for reprinting it.' : 'Print the label for <b>' + $('<div>').text(number).html() + '</b>?',
+            input: reprint ? 'textarea' : undefined,
+            inputPlaceholder: 'Reason for reprint',
+            inputAttributes: reprint ? { maxlength: 500, 'aria-label': 'Reason for reprint' } : undefined,
+            inputValidator: reprint ? function (value) { return (!value || value.trim().length < 3) ? 'Enter a reason of at least 3 characters.' : null; } : undefined,
+            showCancelButton: true,
+            confirmButtonText: reprint ? 'Reprint label' : 'Print label',
+            confirmButtonColor: '#00416b',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: function () { return !Swal.isLoading(); },
+            preConfirm: function (value) {
+                return $.ajax({ url: $button.data('print'), method: 'POST', dataType: 'json', data: { reason: reprint ? value.trim() : null }, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } })
+                    .then(function (response) { return response.data; })
+                    .catch(function (xhr) { Swal.showValidationMessage((xhr.responseJSON || {}).message || 'Could not print the label.'); });
+            }
+        }).then(function (result) {
+            if (!result.isConfirmed || !result.value) { return; }
+            $button.data('printed', result.value.copy_number).attr('data-printed', result.value.copy_number).html('Reprint<br>label');
+            window.CartonLabel.print([result.value.label]);
+        });
     });
 });
 </script>

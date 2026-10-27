@@ -26,7 +26,9 @@ class CartonController extends Controller
             }))
             ->orderByDesc('id')->paginate(25)->withQueryString();
 
-        return view('admin.package-station.cartons', ['cartons' => $cartons, 'counts' => $counts, 'activeStatus' => $request->string('status')->toString()]);
+        return view('admin.package-station.cartons', [
+            'cartons' => $cartons, 'counts' => $counts, 'activeStatus' => $request->string('status')->toString(), 'labelConfig' => config('packaging.label'),
+        ]);
     }
 
     public function show(Carton $carton): View
@@ -70,7 +72,9 @@ class CartonController extends Controller
     {
         $job = $label->print($carton->id, $request->input('reason'), $request->user());
 
-        return response()->json(['data' => ['copy_number' => $job->copy_number, 'is_reprint' => $job->is_reprint, 'url' => route('cartons.label', $carton)]], 201);
+        return response()->json(['data' => [
+            'copy_number' => $job->copy_number, 'is_reprint' => $job->is_reprint, 'url' => route('cartons.label', $carton), 'label' => $this->labelPayload($carton),
+        ]], 201);
     }
 
     /** First print of a whole packing session's labels; a carton that already has a print is skipped, never reprinted. */
@@ -90,9 +94,43 @@ class CartonController extends Controller
         return response()->json(['data' => ['printed' => $printed, 'already_printed' => $alreadyPrinted]], 201);
     }
 
-    public function label(Carton $carton, PrintCartonLabel $label): View
+    /** The same label the package station prints after saving cartons, built from the saved carton. */
+    public function label(Carton $carton): View
     {
-        return view('admin.package-station.carton-label', ['label' => $label->labelData($carton), 'carton' => $carton]);
+        return view('admin.package-station.carton-label', [
+            'carton' => $carton,
+            'labelConfig' => config('packaging.label'),
+            'labelData' => $this->labelPayload($carton),
+        ]);
+    }
+
+    /**
+     * The data the shared carton label (public/pack-pos/carton-label.js) renders.
+     *
+     * @return array<string, mixed>
+     */
+    private function labelPayload(Carton $carton): array
+    {
+        $carton->load(['order.destination', 'items.orderItem', 'items.product.brand']);
+
+        return [
+            'number' => $carton->carton_number,
+            'boxNumber' => $carton->box_number,
+            'invoice' => $carton->order->order_number,
+            'type' => ucfirst(strtolower($carton->packaging_mode->value)),
+            'destination' => $carton->order->destination->name,
+            'weight' => (float) ($carton->manual_weight_g ?? $carton->system_weight_g ?? 0),
+            'toleranceLower' => (float) $carton->weight_tolerance_lower_g,
+            'toleranceUpper' => (float) $carton->weight_tolerance_upper_g,
+            'packedAt' => $carton->created_at?->toIso8601String(),
+            'contents' => $carton->items->where('quantity', '>', 0)->values()->map(fn ($item): array => [
+                'brand' => $item->product->brand?->name ?? '—',
+                'name' => $item->orderItem->original_description ?: $item->orderItem->original_sku,
+                'sku' => $item->orderItem->original_sku,
+                'quantity' => (float) $item->quantity,
+                'netWeight' => (float) $item->quantity * (float) $item->unit_weight_snapshot_g,
+            ])->all(),
+        ];
     }
 
     /** @return list<string> */

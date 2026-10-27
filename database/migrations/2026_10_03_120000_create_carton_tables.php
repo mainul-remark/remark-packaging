@@ -28,6 +28,7 @@ return new class extends Migration
         Schema::create('cartons', function (Blueprint $table): void {
             $table->id();
             $table->string('carton_number', 150);
+            $table->string('box_number', 32)->nullable();
             $table->string('sscc', 18)->nullable()->unique();
             $table->string('seal_number', 80)->nullable()->unique();
             $table->foreignId('order_id')->constrained()->restrictOnDelete();

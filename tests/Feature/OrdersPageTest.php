@@ -35,7 +35,7 @@ it('shows an order with its lines and cartons, and tracks packed units', functio
     ])->assertCreated();
 
     $this->get(route('orders.show', $order))->assertOk()
-        ->assertSee('RICE-1KG')->assertSee('SO-1001-C001')->assertSee('12 / 120 packed');
+        ->assertSee('RICE-1KG')->assertSee('SO-1001-ASO-01')->assertSee('12 / 120 packed');
     $this->get(route('orders.index'))->assertOk()->assertSee('12 / 120 units');
 });
 

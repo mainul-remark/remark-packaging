@@ -109,10 +109,9 @@ class CreatePosCartons
         }
 
         $specCache = $this->weightSpecs(collect($plans)->flatMap(fn (array $plan): array => array_map(fn (array $item): int => $item['line']->product_id, $plan['items']))->unique()->all());
-        $sequence = $this->lastSequence($order);
         $cartons = [];
         foreach ($plans as $position => $plan) {
-            $cartons[] = $this->persist($order, $plan, ++$sequence, $batchKey, $position + 1, $specCache, $operator);
+            $cartons[] = $this->persist($order, $plan, $batchKey, $position + 1, $specCache, $operator);
         }
 
         if (collect($remaining)->every(fn (string $left): bool => bccomp($left, '0', 3) <= 0)) {
@@ -123,16 +122,18 @@ class CreatePosCartons
     }
 
     /** @param array<int, ProductWeightSpec> $specCache */
-    private function persist(Order $order, array $plan, int $sequence, string $batchKey, int $position, array $specCache, User $operator): Carton
+    private function persist(Order $order, array $plan, string $batchKey, int $position, array $specCache, User $operator): Carton
     {
         $spec = $plan['spec'];
+        [$boxNumber, $cartonNumber] = $this->numbers($order, $plan);
         $units = '0.000';
         foreach ($plan['items'] as $item) {
             $units = bcadd($units, $item['quantity'], 3);
         }
 
         $carton = Carton::query()->create([
-            'carton_number' => sprintf('%s-C%03d', $order->order_number, $sequence),
+            'carton_number' => $cartonNumber,
+            'box_number' => $boxNumber,
             'order_id' => $order->id,
             'carton_type_id' => $plan['type']->id,
             'packaging_mode' => $plan['mode'],
@@ -235,21 +236,33 @@ class CreatePosCartons
         return $cache;
     }
 
-    private function lastSequence(Order $order): int
+    /**
+     * Box number and the carton number (the barcode value) for the next carton of its kind on the order.
+     * Sorted cartons count per product (SO-01, SO-02, ...); assorted cartons count per order (ASO-01, ...).
+     * Cancelled cartons keep their numbers, so a number is never reused.
+     *
+     * @param  array{mode: PackagingMode, items: list<array{line: OrderItem, quantity: string}>}  $plan
+     * @return array{0: string, 1: string}
+     */
+    private function numbers(Order $order, array $plan): array
     {
-        $prefix = "{$order->order_number}-C";
+        $sorted = $plan['mode'] === PackagingMode::SORTED;
+        $prefix = $sorted ? 'SO-' : 'ASO-';
+        $existing = Carton::query()->where('cartons.order_id', $order->id)->where('cartons.packaging_mode', $plan['mode']->value);
+        if ($sorted) {
+            $existing->join('carton_items', 'carton_items.carton_id', '=', 'cartons.id')->where('carton_items.order_item_id', $plan['items'][0]['line']->id);
+        }
+
         $highest = 0;
-        foreach (Carton::query()->where('order_id', $order->id)->pluck('carton_number') as $number) {
-            if (! str_starts_with($number, $prefix)) {
-                continue;
-            }
-            $tail = substr($number, strlen($prefix));
+        foreach ($existing->pluck('cartons.box_number') as $number) {
+            $tail = substr((string) $number, strlen($prefix));
             if (ctype_digit($tail)) {
                 $highest = max($highest, (int) $tail);
             }
         }
+        $box = sprintf('%s%02d', $prefix, $highest + 1);
 
-        return $highest;
+        return [$box, $sorted ? "{$order->order_number}-{$plan['items'][0]['line']->original_sku}-{$box}" : "{$order->order_number}-{$box}"];
     }
 
     private function grams(mixed $value): ?string

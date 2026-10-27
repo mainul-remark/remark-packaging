@@ -122,69 +122,13 @@ function sortedCartonCodes(count, lines) {
   return Array.from({ length: count }, (_, index) => `${prefix}-${String(lastSequence + index + 1).padStart(3, "0")}`);
 }
 
-const code128Patterns = [
-  "212222","222122","222221","121223","121322","131222","122213","122312","132212","221213","221312","231212",
-  "112232","122132","122231","113222","123122","123221","223211","221132","221231","213212","223112","312131",
-  "311222","321122","321221","312212","322112","322211","212123","212321","232121","111323","131123","131321",
-  "112313","132113","132311","211313","231113","231311","112133","112331","132131","113123","113321","133121",
-  "313121","211331","231131","213113","213311","213131","311123","311321","331121","312113","312311","332111",
-  "314111","221411","431111","111224","111422","121124","121421","141122","141221","112214","112412","122114",
-  "122411","142112","142211","241211","221114","413111","241112","134111","111242","121142","121241","114212",
-  "124112","124211","411212","421112","421211","212141","214121","412121","111143","111341","131141","114113",
-  "114311","411113","411311","113141","114131","311141","411131","211412","211214","211232","2331112"
-];
-
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
 }
 
-function code128Svg(value) {
-  const characters = [...String(value)];
-  if (characters.some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) > 126)) throw new Error("Unsupported barcode character");
-  const values = characters.map(character => character.charCodeAt(0) - 32);
-  const checksum = (104 + values.reduce((sum, item, index) => sum + item * (index + 1), 0)) % 103;
-  const patterns = [code128Patterns[104], ...values.map(item => code128Patterns[item]), code128Patterns[checksum], code128Patterns[106]];
-  const moduleWidth = 2;
-  const quietZone = 10;
-  const width = (patterns.reduce((sum, pattern) => sum + [...pattern].reduce((total, digit) => total + Number(digit), 0), 0) + quietZone * 2) * moduleWidth;
-  let x = quietZone * moduleWidth;
-  const bars = [];
-  patterns.forEach(pattern => {
-    [...pattern].forEach((digit, index) => {
-      const segmentWidth = Number(digit) * moduleWidth;
-      if (index % 2 === 0) bars.push(`<rect x="${x}" y="0" width="${segmentWidth}" height="72"/>`);
-      x += segmentWidth;
-    });
-  });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 72" role="img" aria-label="Barcode ${escapeHtml(value)}">${bars.join("")}</svg>`;
-}
-
-function cartonLabelHtml(carton) {
-  const code = escapeHtml(carton.number);
-  const rows = (carton.contents || []).map(item => `<tr><td><b>${escapeHtml(item.name)}</b><small>SKU ${escapeHtml(item.sku)}</small></td><td>${escapeHtml(number(item.quantity))}</td></tr>`).join("");
-  const reference = [carton.invoice && `Invoice ${carton.invoice}`, carton.workOrder && `WO ${carton.workOrder}`].filter(Boolean).map(escapeHtml).join(" · ");
-  return `<div class="label"><div class="brand"><b>Remark</b><span>Packaging operations</span></div><div class="code">${code}</div><div class="barcode">${code128Svg(carton.number)}</div><div class="sub">${reference}</div><table class="items"><thead><tr><th>Product / SKU</th><th>Qty</th></tr></thead><tbody>${rows}</tbody></table><div class="meta"><span><small>Type</small><b>${escapeHtml(carton.type)}</b></span><span><small>Units</small><b>${escapeHtml(carton.units)}</b></span><span><small>Weight</small><b>${escapeHtml(grams(carton.weight))}</b></span></div></div>`;
-}
-
-// Prints every label in one print request, one label per page, through a hidden frame so no pop-up is needed.
-// Resolves when the print dialog closes (afterprint fires whether the user prints or cancels).
+// Prints through the shared label script (one label per page, hidden frame, resolves when the dialog closes).
 function printCartonLabels(cartons) {
-  if (!cartons.length) return Promise.resolve();
-  const frame = document.createElement("iframe");
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
-  document.body.appendChild(frame);
-  const doc = frame.contentDocument;
-  doc.open();
-  doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${cartons.length === 1 ? escapeHtml(cartons[0].number) : `${cartons.length} carton labels`}</title><style>
-    @page{size:100mm 100mm;margin:4mm}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#071d2e}.label{width:92mm;min-height:90mm;break-after:page;page-break-after:always;padding:5mm;border:1px solid #9aa8b3;border-radius:3mm}.brand{display:flex;justify-content:space-between;align-items:flex-start}.brand b{font-size:18px;color:#003f68}.brand span{font-size:10px;text-transform:uppercase}.code{margin:4mm 0 2mm;font-size:15px;font-weight:700;text-align:center;overflow-wrap:anywhere}.barcode svg{display:block;width:100%;height:18mm}.sub{margin-top:1mm;font-size:9px;color:#667085;text-align:center}.items{width:100%;margin-top:3mm;border-collapse:collapse;font-size:10px}.items th{text-align:left;color:#667085;text-transform:uppercase;font-size:8px;border-bottom:1px solid #9aa8b3;padding:1mm 0}.items td{padding:1mm 0;border-bottom:1px solid #e4e9ed;vertical-align:top}.items td:last-child,.items th:last-child{text-align:right;white-space:nowrap;padding-left:2mm}.items small{display:block;color:#667085}.meta{margin-top:3mm;display:grid;grid-template-columns:repeat(3,1fr);gap:2mm;font-size:10px}.meta span{padding:2mm;background:#f2f5f7;border-radius:1.5mm}.meta small,.meta b{display:block}.meta small{margin-bottom:1mm;color:#667085;text-transform:uppercase}.label:last-child{break-after:auto;page-break-after:auto}@media print{.label{border:1px solid #555}}
-  </style></head><body>${cartons.map(cartonLabelHtml).join("")}</body></html>`);
-  doc.close();
-  return new Promise(resolve => {
-    const done = () => { resolve(); setTimeout(() => frame.remove(), 1000); };
-    frame.contentWindow.addEventListener("afterprint", done);
-    setTimeout(() => { frame.contentWindow.focus(); frame.contentWindow.print(); }, 250);
-  });
+  return window.CartonLabel.print(cartons);
 }
 
 // A label is printed once. Saved cartons record that first print on the server before anything is sent to the printer,
@@ -709,7 +653,7 @@ async function confirmCartons(event) {
       if (!record) return;
       Object.assign(carton, {
         weightFlag: record.weight_flag || null,
-        number: record.carton_number, id: record.id, status: "CONTENTS VERIFIED", systemWeight: Number(record.system_weight_g),
+        number: record.carton_number, boxNumber: record.box_number, id: record.id, status: "CONTENTS VERIFIED", systemWeight: Number(record.system_weight_g),
         toleranceLower: Number(record.weight_tolerance_lower_g), toleranceUpper: Number(record.weight_tolerance_upper_g), weight: Number(record.manual_weight_g || record.system_weight_g)
       });
     });
@@ -941,7 +885,7 @@ function addValidatedCarton() {
     ? `${state.data.workOrder.number}-${state.activeDraft.number}-${index + 1}`
     : `${state.data.workOrder.number}-${state.activeDraft.number}`);
   const manual = Number($("#manual-weight").value || 0);
-  const contents = lines.map(line => { const product = getProduct(line.productId); return { sku: product.sku, name: product.name, quantity: Number(line.quantity) }; });
+  const contents = lines.map(line => { const product = getProduct(line.productId); return { sku: product.sku, name: product.name, brand: product.brand || "—", quantity: Number(line.quantity), netWeight: Number(line.quantity) * Number(product.unitWeight || 0) }; });
   const machineWeight = Number($("#machine-weight")?.dataset.grams || 0);
   const spec = {
     packaging_mode: cartonMode === "sorted" ? "SORTED" : "ASSORTED",
@@ -955,7 +899,7 @@ function addValidatedCarton() {
     ...(weightAck ? { weight_flag_acknowledged: true } : {})
   };
   cartonNumbers.slice().reverse().forEach(cartonNumber => {
-    const carton = { number: cartonNumber, weightFlag: weightAck?.flag || null, units, type: cartonMode === "sorted" ? "Sorted" : "Assorted", status: "CONTENTS VERIFIED", weight: manual || calculatedWeight, invoice: state.data.workOrder.invoice, workOrder: state.data.workOrder.number, contents };
+    const carton = { number: cartonNumber, weightFlag: weightAck?.flag || null, units, type: cartonMode === "sorted" ? "Sorted" : "Assorted", status: "CONTENTS VERIFIED", weight: manual || calculatedWeight, invoice: state.data.workOrder.invoice, workOrder: state.data.workOrder.number, destination: state.data.workOrder.destination, contents };
     state.data.existingCartons.unshift(carton);
     state.sessionCartons.unshift(carton);
   });

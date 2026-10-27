@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\WeightMeasurementMethod;
 use App\Enums\WeightSpecStatus;
+use App\Models\Brand;
 use App\Models\CartonType;
 use App\Models\Customer;
 use App\Models\Destination;
@@ -33,10 +34,14 @@ class PackagingDemoSeeder extends Seeder
             ['sku' => 'SALT-500G', 'name' => 'Iodised Salt 500g', 'weight' => 515, 'lower' => 5, 'upper' => 5, 'per_carton' => 20, 'barcode' => '8901000000059'],
         ];
 
+        $brand = Brand::query()->firstOrCreate(['code' => 'REMARK'], ['name' => 'Remark']);
+
         $products = [];
         foreach ($catalogue as $row) {
-            $product = Product::query()->firstOrCreate(['sku' => $row['sku']], [
+            // updateOrCreate so products seeded before a brand existed get one too.
+            $product = Product::query()->updateOrCreate(['sku' => $row['sku']], [
                 'category_id' => $category->id,
+                'brand_id' => $brand->id,
                 'name' => $row['name'],
                 'units_per_carton' => $row['per_carton'],
                 'verification_status' => 'VERIFIED',
@@ -53,8 +58,11 @@ class PackagingDemoSeeder extends Seeder
             $products[$row['sku']] = $product;
         }
 
-        foreach ([['SMALL', 'Small Carton', 180, 5], ['MEDIUM', 'Medium Carton', 320, 8], ['LARGE', 'Large Carton', 540, 12]] as [$code, $name, $tare, $tolerance]) {
-            CartonType::query()->firstOrCreate(['code' => $code], ['name' => $name, 'tare_weight_g' => $tare, 'tare_tolerance_g' => $tolerance]);
+        foreach ([['SMALL', 'Small Carton', 180, 5, [300, 200, 150]], ['MEDIUM', 'Medium Carton', 320, 8, [400, 300, 250]], ['LARGE', 'Large Carton', 540, 12, [450, 320, 280]]] as [$code, $name, $tare, $tolerance, [$length, $width, $height]]) {
+            CartonType::query()->firstOrCreate(['code' => $code], [
+                'name' => $name, 'tare_weight_g' => $tare, 'tare_tolerance_g' => $tolerance,
+                'length_mm' => $length, 'width_mm' => $width, 'height_mm' => $height,
+            ]);
         }
 
         foreach ([['TAPE', 'Packing Tape Roll', 45, 2], ['BUBBLE', 'Bubble Wrap Sheet', 30, 2], ['SILICA', 'Silica Gel Pack', 10, 1]] as [$code, $name, $weight, $tolerance]) {

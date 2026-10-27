@@ -2,6 +2,7 @@
 
 use App\Models\Carton;
 use App\Models\CartonType;
+use App\Models\LabelPrintJob;
 use App\Models\Order;
 use App\Models\User;
 use Database\Seeders\PackagingDemoSeeder;
@@ -76,7 +77,9 @@ it('prints a label once and requires a reason to reprint it', function (): void 
 
     $this->postJson(route('cartons.label-print', $carton))->assertCreated()->assertJsonPath('data.is_reprint', false);
     $this->postJson(route('cartons.label-print', $carton))->assertStatus(422)->assertJsonPath('code', 'REPRINT_REASON_REQUIRED');
-    $this->postJson(route('cartons.label-print', $carton), ['reason' => 'Label torn'])->assertCreated()->assertJsonPath('data.copy_number', 2);
+    $this->postJson(route('cartons.label-print', $carton), ['reason' => 'Label torn'])->assertCreated()->assertJsonPath('data.copy_number', 2)
+        ->assertJsonPath('data.label.number', $carton->carton_number)->assertJsonPath('data.label.contents.0.sku', 'SUGAR-2KG');
+    expect(LabelPrintJob::query()->where('carton_id', $carton->id)->where('is_reprint', true)->value('reprint_reason'))->toBe('Label torn');
 
     $this->get(route('cartons.label', $carton))->assertOk()->assertSee($carton->carton_number);
 });
@@ -87,6 +90,15 @@ it('lists cartons and shows a carton with its actions', function (): void {
     $this->get(route('cartons.index'))->assertOk()->assertSee($carton->carton_number);
     $this->get(route('cartons.index', ['q' => 'nothing-matches']))->assertOk()->assertSee('No cartons found');
     $this->get(route('cartons.show', $carton))->assertOk()->assertSee('Send to scale');
+});
+
+it('shows the cross-check workflow in physical, contents, and decision order', function (): void {
+    $this->get(route('carton-cross-check'))
+        ->assertOk()
+        ->assertSeeInOrder(['Carton and weight', 'Products in carton', 'Security decision'])
+        ->assertSee('Inspection checklist')
+        ->assertSee('Security note')
+        ->assertSee('Clear for dispatch');
 });
 
 it('clears a carton only when the weight matches, and records a single decision', function (): void {

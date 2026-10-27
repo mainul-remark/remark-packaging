@@ -307,12 +307,15 @@ dialog { width: min(500px, calc(100% - 30px)); padding: 0; border: 0; border-rad
 .pack-pos .builder-panel .wizard-page { padding-top: 4px; }
 .pack-pos .carton-mode-fieldset legend { margin-bottom: 6px; }
 .pack-pos .mode-grid { gap: 6px; }
-.pack-pos .mode-card { min-height: 64px; padding: 8px 11px; grid-template-columns: 32px minmax(0, 1fr) 16px; gap: 9px; border-radius: 10px; }
-.pack-pos .mode-icon { width: 32px; height: 32px; border-radius: 8px; font-size: 17px; }
+.pack-pos .mode-card { min-height: 76px; padding: 8px 10px; grid-template-columns: 34px minmax(0, 1fr) 78px 16px; gap: 9px; border-radius: 10px; }
+.pack-pos .mode-icon { width: 34px; height: 34px; border-radius: 50%; font-size: 19px; }
+.pack-pos .mode-copy { min-width: 0; }
+.pack-pos .mode-art { width: 78px; height: 50px; align-self: center; filter: drop-shadow(0 4px 4px rgba(69, 44, 20, .12)); }
 .pack-pos .mode-card strong { margin-bottom: 2px; font-size: 12px; }
 .pack-pos .mode-card small { font-size: 9px; line-height: 1.25; }
-.pack-pos .radio-mark { width: 16px; height: 16px; }
+.pack-pos .radio-mark { width: 16px; height: 16px; align-self: start; margin-top: 2px; }
 .pack-pos .mode-card.selected .radio-mark { border-width: 4px; }
+@media (max-width: 760px) { .pack-pos .mode-card { grid-template-columns: 34px minmax(0, 1fr) 16px; }.pack-pos .mode-art { display: none; } }
 
 .product-search { position: relative; }
 .add-product-row label { margin: 0; line-height: inherit; }

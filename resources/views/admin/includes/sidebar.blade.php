@@ -47,22 +47,24 @@
                         </a>
 
                         <ul aria-expanded="false" class="collapse first-level">
-                            @can('roles.view')
                             <li class="sidebar-item">
-                                <a href="{{ url('admin/roles') }}" class="sidebar-link">
+                                <a href="{{ route('package-station') }}" class="sidebar-link">
                                     <i class="mdi mdi-adjust"></i>
-                                    <span class="hide-menu">Roles</span>
+                                    <span class="hide-menu">Package Carton</span>
                                 </a>
                             </li>
-                            @endcan
-                            @can('users.view')
+                            <li class="sidebar-item">
+                                <a href="{{ route('carton-cross-check') }}" class="sidebar-link">
+                                    <i class="mdi mdi-adjust"></i>
+                                    <span class="hide-menu">Cross Check Carton</span>
+                                </a>
+                            </li>
                             <li class="sidebar-item">
                                 <a href="{{ url('admin/users') }}" class="sidebar-link">
                                     <i class="mdi mdi-adjust"></i>
-                                    <span class="hide-menu">Users</span>
+                                    <span class="hide-menu">Cartons</span>
                                 </a>
                             </li>
-                            @endcan
 
                         </ul>
                     </li>

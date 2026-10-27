@@ -11,4 +11,8 @@ class PackageStationController extends Controller
     {
         return view('admin.package-station.index');
     }
+    public function crossCheckPage()
+    {
+        return view('admin.package-station.cross-check');
+    }
 }

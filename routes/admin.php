@@ -19,6 +19,7 @@ Route::prefix('admin')->group(function () {
 
 
         Route::get('package-station', [PackageStationController::class, 'index'])->name('package-station');
+        Route::get('/carton-cross-check', [PackageStationController::class, 'crossCheckPage'])->name('carton-cross-check');
 
         Route::middleware('route.permission')->group(function () {
             Route::resource('/roles', RoleController::class);

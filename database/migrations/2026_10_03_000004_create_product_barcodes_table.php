@@ -22,7 +22,7 @@ return new class extends Migration
         });
 
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE product_barcodes ADD COLUMN active_primary_product_id CHAR(36) GENERATED ALWAYS AS (IF(is_primary = 1 AND status = 'ACTIVE', product_id, NULL)) STORED");
+            DB::statement("ALTER TABLE product_barcodes ADD COLUMN active_primary_product_id BIGINT UNSIGNED GENERATED ALWAYS AS (IF(is_primary = 1 AND status = 'ACTIVE', product_id, NULL)) STORED");
             DB::statement('CREATE UNIQUE INDEX product_barcodes_one_primary_per_product ON product_barcodes (active_primary_product_id)');
         } else {
             DB::statement('CREATE UNIQUE INDEX product_barcodes_one_primary_per_product ON product_barcodes (product_id) WHERE is_primary = TRUE AND status = \'ACTIVE\'');

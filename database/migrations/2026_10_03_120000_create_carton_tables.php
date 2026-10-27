@@ -14,11 +14,14 @@ return new class extends Migration
             $table->string('code', 64);
             $table->string('name', 160);
             $table->decimal('tare_weight_g', 14, 3)->default(0);
+            $table->decimal('tare_tolerance_g', 14, 3)->default(0);
             $table->decimal('max_gross_weight_g', 14, 3)->nullable();
             $table->unsignedInteger('length_mm')->nullable();
             $table->unsignedInteger('width_mm')->nullable();
             $table->unsignedInteger('height_mm')->nullable();
             $table->string('status', 16)->default('ACTIVE');
+            $table->string('image_path', 255)->nullable();
+            $table->timestampTz('image_updated_at')->nullable();
             $table->timestampsTz();
         });
 
@@ -26,19 +29,19 @@ return new class extends Migration
             $table->id();
             $table->string('carton_number', 150);
             $table->string('sscc', 18)->nullable()->unique();
-            $table->foreignId('work_order_id')->constrained('packaging_work_orders')->restrictOnDelete();
+            $table->string('seal_number', 80)->nullable()->unique();
+            $table->foreignId('order_id')->constrained()->restrictOnDelete();
             $table->foreignId('carton_type_id')->nullable()->constrained('carton_types')->restrictOnDelete();
             $table->string('packaging_mode', 16);
             $table->string('status', 32)->default('CREATED');
             $table->decimal('expected_weight_g', 14, 3)->nullable();
             $table->decimal('verified_weight_g', 14, 3)->nullable();
-            $table->foreignId('current_location_id')->nullable()->constrained('locations')->restrictOnDelete();
             $table->foreignId('packed_by')->constrained('users')->restrictOnDelete();
             $table->foreignId('verified_by')->nullable()->constrained('users')->restrictOnDelete();
             $table->timestampTz('sealed_at')->nullable();
             $table->unsignedInteger('version')->default(1);
             $table->timestampsTz();
-            $table->index(['work_order_id', 'status']);
+            $table->index(['order_id', 'status']);
         });
 
         Schema::create('carton_items', function (Blueprint $table): void {

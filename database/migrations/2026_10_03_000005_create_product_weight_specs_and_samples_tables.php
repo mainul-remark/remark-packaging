@@ -31,7 +31,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_weight_spec_id')->constrained()->restrictOnDelete();
             $table->decimal('measured_weight_g', 14, 3);
-            $table->uuid('scale_id')->nullable();
+            $table->unsignedBigInteger('scale_id')->nullable();
             $table->string('measurement_source', 24);
             $table->foreignId('measured_by')->constrained('users')->restrictOnDelete();
             $table->timestampTz('measured_at');
@@ -40,7 +40,7 @@ return new class extends Migration
         });
 
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE product_weight_specs ADD COLUMN current_approved_product_id CHAR(36) GENERATED ALWAYS AS (IF(verification_status = 'VERIFIED' AND effective_to IS NULL, product_id, NULL)) STORED");
+            DB::statement("ALTER TABLE product_weight_specs ADD COLUMN current_approved_product_id BIGINT UNSIGNED GENERATED ALWAYS AS (IF(verification_status = 'VERIFIED' AND effective_to IS NULL, product_id, NULL)) STORED");
             DB::statement('CREATE UNIQUE INDEX product_weight_specs_one_current_approved ON product_weight_specs (current_approved_product_id)');
         } else {
             DB::statement("CREATE UNIQUE INDEX product_weight_specs_one_current_approved ON product_weight_specs (product_id) WHERE verification_status = 'VERIFIED' AND effective_to IS NULL");

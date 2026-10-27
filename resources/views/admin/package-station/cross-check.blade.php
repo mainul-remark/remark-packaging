@@ -1,6 +1,5 @@
 @extends('admin.master')
 @section('title', 'Carton Cross-check')
-
 @section('content')
 <div class="page-breadcrumb border-bottom mb-2">
     <div class="row">
@@ -15,53 +14,61 @@
         </div>
     </div>
 </div>
-
-<div class="container-fluid cc-shell">
-    <section class="cc-panel cc-session" aria-label="Current security session">
-        <div class="cc-session-title"><span class="cc-shield"><i class="mdi mdi-shield-outline"></i></span><div><small>Current security session</small><strong>Outbound dispatch verification</strong></div></div>
+<div class="container-fluid cc-shell" id="cc-page" data-lookup="{{ route('carton-cross-check.lookup') }}" data-decision="{{ url('admin/carton-cross-check') }}">
+    <section class="cc-panel cc-session" aria-label="Today's security session">
+        <div class="cc-session-title"><span class="cc-shield"><i class="mdi mdi-shield-outline"></i></span><div><small>Today's security session</small><strong>Outbound dispatch verification</strong></div></div>
         <div class="cc-metrics">
-            <div><small>Checked</small><strong id="cc-checked">0</strong></div>
-            <div><small>Cleared</small><strong class="cc-success">0</strong></div>
-            <div><small>Flagged</small><strong class="cc-danger">0</strong></div>
-            <div><small>Average variance</small><strong>—</strong></div>
+            <div><small>Checked</small><strong id="cc-checked">{{ $summary['checked'] }}</strong></div>
+            <div><small>Cleared</small><strong class="cc-success" id="cc-cleared">{{ $summary['cleared'] }}</strong></div>
+            <div><small>Flagged</small><strong class="cc-danger" id="cc-flagged">{{ $summary['flagged'] }}</strong></div>
+            <div><small>Average variance</small><strong>{{ $summary['average'] === null ? '—' : number_format((float) $summary['average'], 1).' g' }}</strong></div>
         </div>
     </section>
-
     <div class="cc-grid">
         <aside>
             <section class="cc-panel cc-scanner-card">
                 <header><span><b>01</b> Carton lookup</span><span class="cc-ready"><i></i> Scanner ready</span></header>
-                <div class="cc-scanner-intro"><span class="cc-barcode-icon"><i class="mdi mdi-barcode-scan"></i></span><div><h2>Scan carton label</h2><p>Use the handheld scanner or enter the carton code manually.</p></div></div>
+                <div class="cc-scanner-intro"><span class="cc-barcode-icon"><i class="mdi mdi-barcode-scan"></i></span><div><h2>Scan carton label</h2><p>Use the handheld scanner or enter the carton number manually.</p></div></div>
                 <form id="cc-lookup-form" novalidate>
                     <label for="cc-carton-code">Carton barcode</label>
-                    <div class="cc-input-group"><i class="mdi mdi-barcode"></i><input id="cc-carton-code" type="text" placeholder="e.g. CTN-260101-0048" autocomplete="off"><button type="submit"><i class="mdi mdi-magnify"></i> Load</button></div>
+                    <div class="cc-input-group"><i class="mdi mdi-barcode"></i><input id="cc-carton-code" type="text" placeholder="e.g. SO-1001-C001" autocomplete="off"><button type="submit"><i class="mdi mdi-magnify"></i> Load</button></div>
                     <p class="cc-shortcuts">Press <kbd>Enter</kbd> to search · <kbd>F2</kbd> to focus</p>
                     <p id="cc-error" class="cc-error" role="alert" hidden>Enter or scan a carton barcode first.</p>
                 </form>
             </section>
-
             <section id="cc-work-order" class="cc-panel cc-work-order" hidden>
-                <header><span><b>02</b> Work order</span><em>IN PROGRESS</em></header>
-                <div class="cc-wo-title"><span>WO</span><div><small>Work order</small><strong>DEMO-SO-1002-WO01</strong><p>DEMO-INV-1002 / Agora Retail Chittagong</p></div></div>
-                <dl><div><dt>Sales order</dt><dd>DEMO-SO-1002</dd></div><div><dt>Destination</dt><dd>Chattogram Depot</dd></div><div><dt>Warehouse</dt><dd>Dhaka Main Warehouse</dd></div><div><dt>Packed by</dt><dd>Packaging Operator</dd></div></dl>
+                <header><span><b>02</b> Order</span><em id="cc-wo-status"></em></header>
+                <div class="cc-wo-title"><span>SO</span><div><small>Order</small><strong id="cc-wo-number"></strong><p id="cc-wo-sub"></p></div></div>
+                <dl><div><dt>Invoice</dt><dd id="cc-wo-invoice"></dd></div><div><dt>Destination</dt><dd id="cc-wo-destination"></dd></div><div><dt>Packed by</dt><dd id="cc-wo-packer"></dd></div></dl>
             </section>
         </aside>
-
         <main id="cc-empty" class="cc-panel cc-empty-state">
             <span><i class="mdi mdi-package-variant-closed"></i></span>
             <h2>No carton loaded</h2>
-            <p>Scan or enter a carton label barcode to load its work order, contents and weight check.</p>
+            <p>Scan or enter a carton label barcode to load its order, contents and weight check.</p>
         </main>
-
         <main id="cc-loaded" class="cc-panel cc-loaded" hidden>
-            <header class="cc-loaded-header"><span class="cc-box-icon"><i class="mdi mdi-package-variant-closed"></i></span><div><small>Carton under review</small><h2 id="cc-loaded-code">CTN-260101-0048</h2><p>Sorted carton · 15 units</p></div><button id="cc-new-scan" type="button"><i class="mdi mdi-refresh"></i> New scan</button></header>
+            <header class="cc-loaded-header"><span class="cc-box-icon"><i class="mdi mdi-package-variant-closed"></i></span><div><small>Carton under review</small><h2 id="cc-loaded-code"></h2><p id="cc-loaded-sub"></p></div><button id="cc-new-scan" type="button"><i class="mdi mdi-refresh"></i> New scan</button></header>
             <section class="cc-loaded-section">
-                <div class="cc-section-title"><span>01</span><div><small>Carton contents</small><h3>Products in carton</h3></div><em>IN PROGRESS</em></div>
-                <div class="table-responsive"><table class="table cc-table mb-0"><thead><tr><th>Product</th><th>Product barcode</th><th class="text-right">Quantity</th><th class="text-right">Unit weight</th><th class="text-right">Line weight</th></tr></thead><tbody><tr><td><strong>RMK-MO-050</strong><small>Remark Daily Moisturiser 50g</small></td><td>DEMO00000003</td><td class="text-right">15</td><td class="text-right">60 g</td><td class="text-right font-weight-bold">900 g</td></tr></tbody><tfoot><tr><td colspan="2"><strong>Recorded carton contents</strong></td><td class="text-right"><strong>15 units</strong></td><td></td><td class="text-right"><strong>900 g</strong></td></tr></tfoot></table></div>
+                <div class="cc-section-title"><span>01</span><div><small>Carton contents</small><h3>Products in carton</h3></div><em id="cc-carton-status"></em></div>
+                <div class="table-responsive"><table class="table cc-table mb-0"><thead><tr><th>Product</th><th>Product barcode</th><th class="text-right">Quantity</th><th class="text-right">Unit weight</th><th class="text-right">Line weight</th></tr></thead><tbody id="cc-items"></tbody><tfoot id="cc-items-foot"></tfoot></table></div>
             </section>
             <section class="cc-loaded-section cc-verification">
-                <div class="cc-section-title"><span>02</span><div><small>Physical verification</small><h3>Carton and weight</h3></div><em class="cc-pass"><i class="mdi mdi-check-circle-outline"></i> Within tolerance</em></div>
-                <div class="row p-3"><div class="col-md-6"><div class="cc-detail-grid"><div><small>Carton type</small><strong>Standard carton</strong></div><div><small>Security seal</small><strong>FS-10048</strong></div><div><small>Product units</small><strong>15 units</strong></div><div><small>Expected gross</small><strong>1,140 g</strong></div></div></div><div class="col-md-6"><div class="cc-weight-check"><span><i class="mdi mdi-scale-balance"></i></span><div><small>Security re-weigh</small><strong>Recorded weight: 1,140 g</strong></div><label>Checker weight <span><input type="number" value="1140"><b>g</b></span></label></div></div></div>
+                <div class="cc-section-title"><span>02</span><div><small>Physical verification</small><h3>Carton and weight</h3></div><em id="cc-weight-result"></em></div>
+                <div class="row p-3">
+                    <div class="col-md-6"><div class="cc-detail-grid"><div><small>Carton type</small><strong id="cc-type"></strong></div><div><small>Security seal</small><strong id="cc-seal"></strong></div><div><small>Product units</small><strong id="cc-units"></strong></div><div><small>Expected gross</small><strong id="cc-expected"></strong></div></div></div>
+                    <div class="col-md-6"><div class="cc-weight-check"><span><i class="mdi mdi-scale-balance"></i></span><div><small>Security re-weigh</small><strong id="cc-recorded"></strong></div><label>Checker weight <span><input type="number" id="cc-checker-weight" step="0.001" min="0"><b>g</b></span></label></div></div>
+                </div>
+                <div class="px-3 pb-3" id="cc-decision-area">
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="cc-label-ok"><label class="form-check-label" for="cc-label-ok">Label matches the carton</label></div>
+                    <div class="form-check"><input class="form-check-input" type="checkbox" id="cc-seal-ok"><label class="form-check-label" for="cc-seal-ok">Seal is intact</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="cc-condition-ok"><label class="form-check-label" for="cc-condition-ok">Carton condition is acceptable</label></div>
+                    <textarea id="cc-note" class="form-control mb-2" rows="2" maxlength="500" placeholder="Note (required when flagging)"></textarea>
+                    <button type="button" class="btn btn-success mr-2" data-decision="CLEARED"><i class="mdi mdi-check"></i> Clear for dispatch</button>
+                    <button type="button" class="btn btn-outline-danger" data-decision="FLAGGED"><i class="mdi mdi-flag"></i> Flag for review</button>
+                    <p id="cc-decision-msg" class="mt-2 mb-0" role="alert"></p>
+                </div>
+                <div class="px-3 pb-3" id="cc-decided" hidden></div>
             </section>
         </main>
     </div>
@@ -77,13 +84,72 @@
 
 @push('scripts')
 <script>
-$(function(){
-    var $code=$('#cc-carton-code'),$error=$('#cc-error');
-    function resetStation(){$code.val('').focus();$error.prop('hidden',true);$('#cc-work-order,#cc-loaded').prop('hidden',true);$('#cc-empty').prop('hidden',false)}
-    $('#cc-lookup-form').on('submit',function(event){event.preventDefault();var code=$code.val().trim().toUpperCase();if(!code){$error.prop('hidden',false);$code.focus();return}$error.prop('hidden',true);$code.val(code);$('#cc-loaded-code').text(code);$('#cc-empty').prop('hidden',true);$('#cc-work-order,#cc-loaded').prop('hidden',false);$('#cc-checked').text('1')});
-    $code.on('input',function(){$error.prop('hidden',true);this.value=this.value.toUpperCase()});
-    $('#cc-new-scan').on('click',resetStation);
-    $(document).on('keydown',function(event){if(event.key==='F2'){event.preventDefault();$code.focus().select()}});
+$(function () {
+    var $page = $('#cc-page'), csrf = $('meta[name="csrf-token"]').attr('content');
+    var $code = $('#cc-carton-code'), $error = $('#cc-error'), carton = null;
+    function esc(text) { return $('<div>').text(text == null ? '' : text).html(); }
+    function fmt(value, digits) { return value == null ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: digits === undefined ? 1 : digits }); }
+    function reset() { carton = null; $code.val('').focus(); $error.prop('hidden', true); $('#cc-work-order,#cc-loaded').prop('hidden', true); $('#cc-empty').prop('hidden', false); }
+
+    function weightResult() {
+        if (!carton) { return; }
+        var entered = parseFloat($('#cc-checker-weight').val()), recorded = carton.recorded_weight_g;
+        var $badge = $('#cc-weight-result').removeClass('cc-pass cc-fail');
+        if (isNaN(entered) || recorded === null) { $badge.text(recorded === null ? 'No recorded weight' : 'Enter checker weight'); return; }
+        var diff = entered - recorded, ok = Math.abs(diff) <= carton.tolerance_g;
+        $badge.addClass(ok ? 'cc-pass' : 'cc-fail').text(ok ? 'Within tolerance (' + fmt(diff) + ' g)' : 'Outside tolerance (' + fmt(diff) + ' g)');
+    }
+
+    function render(c) {
+        carton = c;
+        $('#cc-loaded-code').text(c.carton_number);
+        $('#cc-loaded-sub').text(fmt(c.unit_count, 0) + ' units · ' + c.status.toLowerCase());
+        $('#cc-wo-number').text(c.order.number); $('#cc-wo-sub').text(c.order.customer); $('#cc-wo-status').text(c.status);
+        $('#cc-wo-invoice').text(c.order.invoice || '—'); $('#cc-wo-destination').text(c.order.destination); $('#cc-wo-packer').text(c.packed_by || '—');
+        $('#cc-carton-status').text(c.status);
+        var total = 0;
+        $('#cc-items').html(c.items.map(function (i) {
+            var line = i.quantity * i.unit_weight_g; total += line;
+            return '<tr><td><strong>' + esc(i.sku) + '</strong><small>' + esc(i.name) + '</small></td><td>' + esc(i.barcode || '—') + '</td><td class="text-right">' + fmt(i.quantity, 0) + '</td><td class="text-right">' + fmt(i.unit_weight_g) + ' g</td><td class="text-right font-weight-bold">' + fmt(line) + ' g</td></tr>';
+        }).join(''));
+        $('#cc-items-foot').html('<tr><td colspan="2"><strong>Recorded carton contents</strong></td><td class="text-right"><strong>' + fmt(c.unit_count, 0) + ' units</strong></td><td></td><td class="text-right"><strong>' + fmt(total) + ' g</strong></td></tr>');
+        $('#cc-type').text(c.carton_type || '—'); $('#cc-seal').text(c.seal_number || 'Not sealed'); $('#cc-units').text(fmt(c.unit_count, 0) + ' units'); $('#cc-expected').text(fmt(c.expected_weight_g) + ' g');
+        $('#cc-recorded').text('Recorded weight: ' + (c.recorded_weight_g === null ? '—' : fmt(c.recorded_weight_g) + ' g'));
+        $('#cc-checker-weight').val(c.recorded_weight_g === null ? '' : c.recorded_weight_g);
+        $('#cc-label-ok,#cc-seal-ok,#cc-condition-ok').prop('checked', false); $('#cc-note').val(''); $('#cc-decision-msg').text('');
+        var decided = c.decision;
+        $('#cc-decision-area').prop('hidden', !!decided); $('#cc-decided').prop('hidden', !decided);
+        if (decided) { $('#cc-decided').html('<strong>' + esc(decided.decision) + '</strong> by ' + esc(decided.decided_by) + ' · ' + esc(decided.decided_at) + (decided.note ? '<br><em>' + esc(decided.note) + '</em>' : '')); }
+        weightResult();
+        $('#cc-empty').prop('hidden', true); $('#cc-work-order,#cc-loaded').prop('hidden', false);
+    }
+
+    $('#cc-lookup-form').on('submit', function (event) {
+        event.preventDefault();
+        var value = $code.val().trim().toUpperCase();
+        if (!value) { $error.text('Enter or scan a carton barcode first.').prop('hidden', false); $code.focus(); return; }
+        $error.prop('hidden', true); $code.val(value);
+        $.getJSON($page.data('lookup'), { code: value }).done(function (response) { render(response.data); })
+            .fail(function (xhr) { $error.text((xhr.responseJSON || {}).message || 'Could not load that carton.').prop('hidden', false); });
+    });
+    $code.on('input', function () { $error.prop('hidden', true); this.value = this.value.toUpperCase(); });
+    $('#cc-checker-weight').on('input', weightResult);
+    $('#cc-new-scan').on('click', reset);
+    $(document).on('keydown', function (event) { if (event.key === 'F2') { event.preventDefault(); $code.focus().select(); } });
+
+    $('#cc-decision-area').on('click', '[data-decision]', function () {
+        var decision = $(this).data('decision'), weight = parseFloat($('#cc-checker-weight').val());
+        var payload = {
+            decision: decision, label_matched: $('#cc-label-ok').is(':checked') ? 1 : 0, seal_intact: $('#cc-seal-ok').is(':checked') ? 1 : 0,
+            condition_acceptable: $('#cc-condition-ok').is(':checked') ? 1 : 0, checker_weight_g: isNaN(weight) ? null : weight, note: $('#cc-note').val()
+        };
+        $.ajax({ url: $page.data('decision') + '/' + carton.id + '/decision', method: 'POST', dataType: 'json', data: payload, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' } })
+            .done(function () { window.location.reload(); })
+            .fail(function (xhr) {
+                var json = xhr.responseJSON || {};
+                $('#cc-decision-msg').addClass('text-danger').text(json.message || (json.errors ? Object.values(json.errors)[0][0] : 'Could not record the decision.'));
+            });
+    });
 });
 </script>
 @endpush

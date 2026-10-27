@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\CartonController;
+use App\Http\Controllers\Admin\CrossCheckController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PackageStationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UsersController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\PackageStationController;
 
 Route::get('admin', fn () => redirect()->route('login'));
 Route::prefix('admin')->group(function () {
@@ -17,9 +20,20 @@ Route::prefix('admin')->group(function () {
         Route::get('/password-change', [UsersController::class, 'pwChange']);
         Route::post('/update-password', [UsersController::class, 'pwUpdate']);
 
+        Route::resource('orders', OrderController::class)->only(['index', 'show']);
 
         Route::get('package-station', [PackageStationController::class, 'index'])->name('package-station');
-        Route::get('/carton-cross-check', [PackageStationController::class, 'crossCheckPage'])->name('carton-cross-check');
+        Route::get('package-station/find', [PackageStationController::class, 'find'])->name('package-station.find');
+        Route::post('package-station/cartons', [PackageStationController::class, 'store'])->name('package-station.store');
+        Route::post('/cartons/label-prints', [CartonController::class, 'printLabelsFirst'])->name('cartons.label-prints');
+        Route::get('/carton-cross-check', [CrossCheckController::class, 'index'])->name('carton-cross-check');
+        Route::get('/carton-cross-check/lookup', [CrossCheckController::class, 'lookup'])->name('carton-cross-check.lookup');
+        Route::post('/carton-cross-check/{carton}/decision', [CrossCheckController::class, 'store'])->name('carton-cross-check.store');
+        Route::get('/cartons', [CartonController::class, 'index'])->name('cartons.index');
+        Route::get('/cartons/{carton}', [CartonController::class, 'show'])->name('cartons.show');
+        Route::post('/cartons/{carton}/actions/{action}', [CartonController::class, 'act'])->name('cartons.act');
+        Route::get('/cartons/{carton}/label', [CartonController::class, 'label'])->name('cartons.label');
+        Route::post('/cartons/{carton}/label-prints', [CartonController::class, 'printLabel'])->name('cartons.label-print');
 
         Route::middleware('route.permission')->group(function () {
             Route::resource('/roles', RoleController::class);

@@ -39,6 +39,13 @@
                         </ul>
                     </li>
 
+                <li class="sidebar-item">
+                    <a class="sidebar-link waves-effect waves-dark" href="{{ route('orders.index') }}">
+                        <i class="mdi mdi-view-dashboard"></i>
+                        <span class="hide-menu">Orders</span>
+                    </a>
+                </li>
+
                     {{-- Packaging Management --}}
                     <li class="sidebar-item">
                         <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
@@ -60,7 +67,7 @@
                                 </a>
                             </li>
                             <li class="sidebar-item">
-                                <a href="{{ url('admin/users') }}" class="sidebar-link">
+                                <a href="{{ route('cartons.index') }}" class="sidebar-link">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Cartons</span>
                                 </a>

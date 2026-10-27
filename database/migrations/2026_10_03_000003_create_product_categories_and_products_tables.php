@@ -45,13 +45,14 @@ return new class extends Migration
             $table->foreignId('variant_id')->nullable();
             $table->foreignId('verified_by')->nullable()->constrained('users')->restrictOnDelete();
             $table->string('sku', 100)->nullable();
-//            $table->string('external_material_code', 100)->nullable();
+            //            $table->string('external_material_code', 100)->nullable();
             $table->string('name', 200);
             $table->text('description')->nullable();
             $table->string('base_uom', 24)->default('PCS');
             $table->integer('total_shelf_life')->nullable();
-            $table->mediumInteger('default_carton_size')->nullable();
+            $table->mediumInteger('units_per_carton')->nullable();
             $table->string('image_path')->nullable();
+            $table->timestampTz('image_updated_at')->nullable();
             $table->boolean('requires_batch')->default(false);
             $table->boolean('requires_expiry')->default(false);
             $table->string('verification_status', 24)->default('PROVISIONAL');
@@ -59,8 +60,6 @@ return new class extends Migration
             $table->string('status', 24)->default('ACTIVE');
             $table->timestampsTz();
         });
-
-
 
         if (DB::getDriverName() === 'pgsql') {
             DB::statement("ALTER TABLE product_categories ADD CONSTRAINT product_categories_status_check CHECK (status IN ('ACTIVE', 'INACTIVE'))");

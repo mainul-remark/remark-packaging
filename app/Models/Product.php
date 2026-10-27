@@ -7,6 +7,7 @@ use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -63,6 +64,13 @@ class Product extends Model
     public function barcodes(): HasMany
     {
         return $this->hasMany(ProductBarcode::class);
+    }
+
+    public function primaryBarcode(): HasOne
+    {
+        return $this->hasOne(ProductBarcode::class)
+            ->where('is_primary', true)
+            ->where('status', RecordStatus::ACTIVE->value);
     }
 
     public function weightSpecs(): HasMany

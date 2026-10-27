@@ -8,10 +8,32 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{asset('backend/assets/images/favicon.png')}}">
     <title> Admin || @yield('title')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="{{asset('backend/dist/css/style.min.css')}}" rel="stylesheet">
     <link href="{{asset('backend/toastr/dist/build/toastr.min.css')}}" rel="stylesheet">
     @stack('styles')
     @include('admin.includes.theme-color-css')
+    <style>
+        body,
+        button,
+        input,
+        select,
+        textarea,
+        .page-title,
+        .pack-pos,
+        .ct-shell,
+        .cc-shell,
+        .select2-container,
+        .dropdown-menu,
+        .popover,
+        .tooltip,
+        .toast,
+        .swal2-container {
+            font-family: "Roboto", "Segoe UI", Arial, sans-serif !important;
+        }
+    </style>
 </head>
 
 <body data-theme="light">

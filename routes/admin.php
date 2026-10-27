@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\CrossCheckController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PackageStationController;
+use App\Http\Controllers\Admin\Products\BrandController;
+use App\Http\Controllers\Admin\Products\ProductCategoryController;
+use App\Http\Controllers\Admin\Products\ProductController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +24,9 @@ Route::prefix('admin')->group(function () {
         Route::post('/update-password', [UsersController::class, 'pwUpdate']);
 
         Route::resource('orders', OrderController::class)->only(['index', 'show']);
+        Route::resource('products', ProductController::class)->only(['index', 'show']);
+        Route::resource('brands', BrandController::class)->only(['index', 'show']);
+        Route::resource('product-categories', ProductCategoryController::class)->only(['index', 'show']);
 
         Route::get('package-station', [PackageStationController::class, 'index'])->name('package-station');
         Route::get('package-station/find', [PackageStationController::class, 'find'])->name('package-station.find');

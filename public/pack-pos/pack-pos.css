@@ -303,6 +303,16 @@ dialog { width: min(500px, calc(100% - 30px)); padding: 0; border: 0; border-rad
 .mode-card strong .info-tip { text-transform: none; letter-spacing: 0; }
 #sorted-section { margin-top: 16px; }
 #assorted-section { margin-top: 0; }
+.pack-pos .builder-panel:not(.collapsed) .builder-header { padding-bottom: 4px; }
+.pack-pos .builder-panel .wizard-page { padding-top: 4px; }
+.pack-pos .carton-mode-fieldset legend { margin-bottom: 6px; }
+.pack-pos .mode-grid { gap: 6px; }
+.pack-pos .mode-card { min-height: 64px; padding: 8px 11px; grid-template-columns: 32px minmax(0, 1fr) 16px; gap: 9px; border-radius: 10px; }
+.pack-pos .mode-icon { width: 32px; height: 32px; border-radius: 8px; font-size: 17px; }
+.pack-pos .mode-card strong { margin-bottom: 2px; font-size: 12px; }
+.pack-pos .mode-card small { font-size: 9px; line-height: 1.25; }
+.pack-pos .radio-mark { width: 16px; height: 16px; }
+.pack-pos .mode-card.selected .radio-mark { border-width: 4px; }
 
 .product-search { position: relative; }
 .add-product-row label { margin: 0; line-height: inherit; }

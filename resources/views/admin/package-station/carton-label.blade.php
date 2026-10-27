@@ -4,8 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Label {{ $label['carton_number'] }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body{margin:0;padding:24px;background:#f1f3f5;font-family:"Segoe UI",Arial,sans-serif;color:#111}
+        body{margin:0;padding:24px;background:#f1f3f5;font-family:"Roboto","Segoe UI",Arial,sans-serif;color:#111}
         .label{width:100mm;margin:0 auto;padding:6mm;border:2px solid #111;background:#fff}
         .label h1{margin:0 0 2mm;font-size:13pt}.label .code{margin:3mm 0;padding:3mm;border:2px dashed #111;text-align:center;font:700 15pt/1.2 "Courier New",monospace;letter-spacing:.04em;word-break:break-all}
         .label dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:1mm 4mm;font-size:9pt}.label dt{color:#555}.label dd{margin:0;font-weight:600;text-align:right}

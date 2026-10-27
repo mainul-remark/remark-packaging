@@ -103,10 +103,19 @@ it('records the first print of a session of labels once and skips repeats', func
 });
 
 it('saves sorted cartons that hold a single product as identical copies', function (): void {
-    storeCartons([cartonSpec(['packaging_mode' => 'SORTED', 'copies' => 2, 'materials' => []])])->assertCreated();
+    // RICE-1KG packs 12 per carton, so two copies take 24 units.
+    storeCartons([cartonSpec(['packaging_mode' => 'SORTED', 'copies' => 2, 'materials' => [], 'items' => [['order_item_id' => $this->riceLine->id, 'quantity' => 12]]])])->assertCreated();
 
     expect(Carton::query()->pluck('packaging_mode')->map->value->unique()->all())->toBe(['SORTED'])
-        ->and(Carton::query()->count())->toBe(2);
+        ->and(Carton::query()->count())->toBe(2)
+        ->and(Carton::query()->pluck('unit_count')->map(fn ($units): float => (float) $units)->all())->toBe([12.0, 12.0]);
+});
+
+it('requires a sorted carton to hold exactly the product pack size', function (): void {
+    storeCartons([cartonSpec(['packaging_mode' => 'SORTED', 'materials' => [], 'items' => [['order_item_id' => $this->riceLine->id, 'quantity' => 10]]])])
+        ->assertStatus(422)->assertJsonPath('code', 'SORTED_PACK_SIZE');
+
+    expect(Carton::query()->count())->toBe(0);
 });
 
 it('rejects a sorted carton that holds more than one product', function (): void {

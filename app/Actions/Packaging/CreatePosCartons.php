@@ -75,6 +75,13 @@ class CreatePosCartons
             if ($mode === PackagingMode::SORTED && count(array_unique(array_column($spec['items'], 'order_item_id'))) !== 1) {
                 throw new PackagingException('SORTED_SINGLE_PRODUCT', 'A sorted carton holds one product. Use an assorted carton for several products.', ['draft' => $spec['draft_reference'] ?? null]);
             }
+            if ($mode === PackagingMode::SORTED) {
+                $sortedLine = $lines[$spec['items'][0]['order_item_id']] ?? throw new PackagingException('WRONG_SKU', 'A product is not part of this order.', ['order_item_id' => $spec['items'][0]['order_item_id']]);
+                $packSize = number_format((float) $sortedLine->product->units_per_carton, 3, '.', '');
+                if (bccomp($packSize, '0', 3) <= 0 || bccomp(number_format((float) $spec['items'][0]['quantity'], 3, '.', ''), $packSize, 3) !== 0) {
+                    throw new PackagingException('SORTED_PACK_SIZE', "A sorted carton of {$sortedLine->original_sku} must hold its pack size of {$packSize} units.", ['sku' => $sortedLine->original_sku, 'pack_size' => $packSize]);
+                }
+            }
 
             for ($copy = 0; $copy < $copies; $copy++) {
                 $items = [];

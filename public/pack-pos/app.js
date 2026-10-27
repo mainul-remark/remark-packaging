@@ -492,6 +492,43 @@ function renderProductSuggestions() {
   $("#product-select").setAttribute("aria-expanded", "true");
 }
 
+// A sorted carton always holds exactly the product's pack size; the operator only chooses how many cartons to make.
+function sortedPackSize(product) { return Number(product.unitsPerCarton) > 0 ? Number(product.unitsPerCarton) : 0; }
+
+function maxSortedCartons(product) {
+  const size = sortedPackSize(product);
+  return size ? Math.floor(remaining(product) / size) : 0;
+}
+
+// Picks the product for a sorted carton. No product line is shown; the carton count is limited to the full cartons still needed.
+function selectSortedProduct(product) {
+  const size = sortedPackSize(product);
+  if (!size) { showToast(`${product.name} (${product.sku}) has no units per carton defined, so it cannot be packed as a sorted carton.`, true); return false; }
+  if (maxSortedCartons(product) < 1) { showToast(`Only ${number(remaining(product))} pcs of ${product.name} (${product.sku}) remain, less than one full carton of ${number(size)}. Pack them in an assorted carton.`, true); return false; }
+  state.cartonProducts.length = 0;
+  state.cartonProducts.push({ productId: product.id, quantity: size });
+  productSearch.productId = product.id;
+  $("#product-select").value = `${product.sku} · ${product.name}`;
+  closeProductSuggestions();
+  clampSortedCopies();
+  renderCartonProducts();
+  showToast(`${product.sku}: ${number(size)} units per carton. Enter how many cartons to make.`);
+  return true;
+}
+
+function clampSortedCopies() {
+  const line = state.cartonProducts[0];
+  const input = $("#carton-copy-count");
+  if (state.mode !== "sorted" || !line || !input) return;
+  const product = getProduct(line.productId);
+  const max = maxSortedCartons(product);
+  input.max = String(max);
+  if (Number(input.value) > max) {
+    input.value = String(max);
+    showToast(`Only ${max} full carton${max === 1 ? "" : "s"} of ${product.sku} remain on this order.`, true);
+  }
+}
+
 function chooseProduct(productId) {
   const product = getProduct(productId);
   if (!product) return;
@@ -499,9 +536,19 @@ function chooseProduct(productId) {
   productSearch.productId = product.id;
   $("#product-select").value = `${product.sku} · ${product.name}`;
   closeProductSuggestions();
-  const nextInput = state.mode === "sorted" ? $("#carton-copy-count") : $("#product-quantity");
-  nextInput.focus();
-  nextInput.select();
+  if (state.mode === "sorted") {
+    // Choosing the product is enough; the next step is the number of cartons.
+    if (selectSortedProduct(product)) {
+      $("#carton-copy-count").focus();
+      $("#carton-copy-count").select();
+    } else {
+      productSearch.productId = "";
+      $("#product-select").value = "";
+    }
+    return;
+  }
+  $("#product-quantity").focus();
+  $("#product-quantity").select();
 }
 
 // Enter on either field: use the chosen product, else an exact barcode/SKU, else the highlighted or only suggestion.
@@ -525,6 +572,15 @@ function submitProductEntry() {
     if (!product && matches.length > 1) return renderProductSuggestions(), showToast("Select one of the matching products.", true);
   }
   if (!product) return renderProductSuggestions(), showToast(notFoundMessage(term), true);
+  if (state.mode === "sorted") {
+    if (selectSortedProduct(product)) {
+      $("#carton-copy-count").focus();
+      $("#carton-copy-count").select();
+    } else {
+      resetProductEntry();
+    }
+    return;
+  }
   if (!addProduct(product.id, Number($("#product-quantity").value) * multiplier)) return;
   resetProductEntry();
 }
@@ -552,7 +608,7 @@ function renderPackageRows() {
 }
 
 function renderCartonProducts() {
-  $("#carton-products").innerHTML = state.cartonProducts.length ? state.cartonProducts.map((line, index) => {
+  $("#carton-products").innerHTML = state.mode === "sorted" ? "" : state.cartonProducts.length ? state.cartonProducts.map((line, index) => {
     const product = getProduct(line.productId);
     return `<div class="carton-product" data-index="${index}"><span><strong>${product.sku} · ${product.name}</strong><small>${grams(product.unitWeight)} each · ${remaining(product)} invoice units available</small></span><input class="carton-product-quantity" type="number" min="1" max="${remaining(product)}" step="1" value="${line.quantity}" aria-label="Quantity for ${product.sku}"><button class="remove-row" type="button" aria-label="Remove product">×</button></div>`;
   }).join("") : `<div class="empty-row">No products added. Search an invoice product by code or name, or scan a barcode.</div>`;
@@ -593,6 +649,7 @@ function renderSummary() {
 }
 
 function chooseMode(mode) {
+  const previous = state.mode;
   state.mode = mode;
   if (state.activeDraft) state.activeDraft.mode = mode;
   $$(".mode-card").forEach(card => card.classList.toggle("selected", $("input", card).value === mode));
@@ -604,6 +661,14 @@ function chooseMode(mode) {
   const quantity = $("#product-quantity-field");
   if (quantity) quantity.hidden = mode === "sorted";
   if (mode !== "sorted" && $("#carton-copy-count")) $("#carton-copy-count").value = "1";
+  // Sorted and assorted cartons build their contents differently, so changing type starts the contents again.
+  if (previous !== mode && state.cartonProducts.length && (mode === "sorted" || previous === "sorted")) {
+    state.cartonProducts.length = 0;
+    productSearch.productId = "";
+    $("#product-select").value = "";
+    renderCartonProducts();
+    if (mode === "sorted") showToast("Choose the product for the sorted carton.");
+  }
   renderWeight();
 }
 
@@ -709,6 +774,7 @@ function validateCurrentCarton() {
   if (!state.mode) return showToast("Choose a sorted or assorted carton first.", true), false;
   if (!lines.length) return showToast("Add at least one product to the carton.", true), false;
   if (state.mode === "sorted" && lines.length > 1) return showToast("A sorted carton holds one product. Choose assorted to pack several products together.", true), false;
+  if (state.mode === "sorted" && Number(lines[0].quantity) !== sortedPackSize(getProduct(lines[0].productId))) return showToast("Choose the product again to set its carton size.", true), false;
   const copies = currentCopyCount();
   if (!Number.isInteger(copies) || copies < 1 || copies > 100) {
     showToast("Carton copies must be a whole number between 1 and 100.", true);
@@ -937,7 +1003,7 @@ function bindBuilderEvents(root) {
     if (draft) toggleDraft(draft);
   });
   $$("input[name='carton-mode']").forEach(input => input.addEventListener("change", () => chooseMode(input.value)));
-  $("#carton-copy-count").addEventListener("input", () => { renderCartonCodePreview(); renderSummary(); });
+  $("#carton-copy-count").addEventListener("input", () => { clampSortedCopies(); renderCartonCodePreview(); renderWeight(); });
   $("#carton-type").addEventListener("change", renderWeight);
   $("#manual-weight").addEventListener("input", renderSummary);
   $("#add-package-item").addEventListener("click", addPackageRow);
@@ -953,8 +1019,18 @@ function bindBuilderEvents(root) {
     state.packageRows.splice(Number(row.dataset.index), 1); renderPackageRows(); renderWeight();
   });
   const productInput = $("#product-select");
-  productInput.addEventListener("input", () => { productSearch.productId = ""; productSearch.active = -1; renderProductSuggestions(); });
-  productInput.addEventListener("focus", () => { if (!productSearch.productId) renderProductSuggestions(); });
+  productInput.addEventListener("input", () => {
+    productSearch.productId = "";
+    productSearch.active = -1;
+    // Typing over a chosen sorted product un-selects it until another one is picked.
+    if (state.mode === "sorted" && state.cartonProducts.length) { state.cartonProducts.length = 0; renderCartonProducts(); }
+    renderProductSuggestions();
+  });
+  productInput.addEventListener("focus", () => {
+    // In sorted mode the box behaves like a picker: focusing it selects the text so another product can replace the current one.
+    if (state.mode === "sorted" && productSearch.productId) productInput.select();
+    if (!productSearch.productId || state.mode === "sorted") renderProductSuggestions();
+  });
   productInput.addEventListener("keydown", event => {
     const open = !$("#product-suggestions").hidden;
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -973,7 +1049,13 @@ function bindBuilderEvents(root) {
   });
   productInput.addEventListener("blur", () => closeProductSuggestions());
   $("#product-quantity").addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); submitProductEntry(); } });
-  $("#carton-copy-count").addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); submitProductEntry(); } });
+  $("#carton-copy-count").addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    // A sorted carton's product is already chosen, so Enter here only confirms the copy count.
+    if (state.mode === "sorted" && state.cartonProducts.length) return;
+    submitProductEntry();
+  });
   $("#carton-products").addEventListener("click", event => {
     const row = event.target.closest(".carton-product"); if (!row || !event.target.matches(".remove-row")) return;
     state.cartonProducts.splice(Number(row.dataset.index), 1); renderCartonProducts();

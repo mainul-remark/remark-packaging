@@ -660,6 +660,8 @@ function chooseMode(mode) {
   if (copies) copies.hidden = mode !== "sorted";
   const quantity = $("#product-quantity-field");
   if (quantity) quantity.hidden = mode === "sorted";
+  const productList = $("#carton-products");
+  if (productList) productList.hidden = mode !== "assorted";
   if (mode !== "sorted" && $("#carton-copy-count")) $("#carton-copy-count").value = "1";
   // Sorted and assorted cartons build their contents differently, so changing type starts the contents again.
   if (previous !== mode && state.cartonProducts.length && (mode === "sorted" || previous === "sorted")) {

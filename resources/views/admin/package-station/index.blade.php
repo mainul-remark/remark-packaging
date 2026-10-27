@@ -129,7 +129,7 @@
                   <div class="field product-search"><label for="product-select"><span>Invoice product</span></label><input id="product-select" type="text" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="product-suggestions" aria-autocomplete="list" placeholder="Search by code or name, or scan barcode…"><div id="product-suggestions" class="product-suggestions" role="listbox" hidden></div></div>
                   <label id="product-quantity-field" class="field quantity-field"><span>Quantity</span><input id="product-quantity" type="number" min="1" value="1"></label>
                 </div>
-                <div id="carton-products" class="carton-product-list"></div>
+                <div id="carton-products" class="carton-product-list" hidden></div>
               </div>
             </div>
 

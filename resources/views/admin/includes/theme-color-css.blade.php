@@ -103,26 +103,33 @@
     ========================================================= */
 
     .navbar-brand {
-        background: var(--sidebar-bg) !important;
+        background: transparent !important;
         color: #ffffff !important;
     }
 
     body[data-theme="light"] .navbar-brand,
     body[data-theme="dark"] .navbar-brand {
-        background: var(--sidebar-bg) !important;
+        background: transparent !important;
     }
 
     .logo-border {
-        background: var(--sidebar-bg) !important;
+        background: transparent !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     body[data-theme="light"] .logo-border,
     body[data-theme="dark"] .logo-border {
-        background: var(--sidebar-bg) !important;
+        background: transparent !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* The source logo has a red symbol that disappears against the magenta
+       end of the header gradient. A white header lockup keeps every part
+       legible while preserving the continuous gradient behind it. */
+    .navbar-brand .logo img {
+        filter: brightness(0) invert(1) drop-shadow(0 1px 1px rgba(18, 20, 55, 0.24)) !important;
     }
 
 
@@ -992,8 +999,199 @@
         border-color: transparent !important;
     }
 
+    /* =========================================================
+       REFERENCE SIDEBAR - LIGHT NAVIGATION
+    ========================================================= */
 
+    .sidebar-reference,
+    body[data-theme="light"] .sidebar-reference,
+    body[data-theme="dark"] .sidebar-reference,
+    .sidebar-reference .scroll-sidebar,
+    .sidebar-reference .sidebar-nav,
+    .sidebar-reference .sidebar-nav > ul,
+    .sidebar-reference .sidebar-nav ul,
+    .sidebar-reference .sidebar-nav .collapse,
+    .sidebar-reference .sidebar-nav .first-level {
+        background: #ffffff !important;
+    }
 
+    .sidebar-reference {
+        border-right: 1px solid #edf1f5 !important;
+        box-shadow: 4px 0 18px rgba(15, 35, 62, 0.04) !important;
+    }
 
+    .sidebar-reference .sidebar-nav {
+        padding: 10px 0 24px !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link,
+    body[data-theme="light"] .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link,
+    body[data-theme="dark"] .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link {
+        width: auto !important;
+        min-height: 40px !important;
+        margin: 3px 14px !important;
+        padding: 8px 12px !important;
+        border: 0 !important;
+        border-radius: 12px !important;
+        background: transparent !important;
+        color: #13213c !important;
+        font-weight: 500 !important;
+        opacity: 1 !important;
+        transition: background-color 160ms ease, color 160ms ease !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link i,
+    .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link .hide-menu {
+        color: inherit !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .sidebar-item .sidebar-link i {
+        width: 36px !important;
+        color: #71809a !important;
+        font-size: 20px !important;
+        text-align: left !important;
+    }
+
+    .sidebar-reference .sidebar-nav .has-arrow::after {
+        right: 16px !important;
+        border-color: #71809a !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .sidebar-item > .sidebar-link:hover,
+    .sidebar-reference .sidebar-nav ul .sidebar-item > .sidebar-link:focus-visible {
+        background: #f1f5f8 !important;
+        color: #004f7c !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .sidebar-item > .sidebar-link:hover i,
+    .sidebar-reference .sidebar-nav ul .sidebar-item > .sidebar-link:focus-visible i {
+        color: #004f7c !important;
+    }
+
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .sidebar-link,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.active > .sidebar-link,
+    body[data-theme="light"] .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .sidebar-link,
+    body[data-theme="dark"] .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .sidebar-link {
+        border: 0 !important;
+        border-radius: 12px !important;
+        background: #e7f0f6 !important;
+        color: #004f7c !important;
+        font-weight: 600 !important;
+    }
+
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .sidebar-link i,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.active > .sidebar-link i,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .sidebar-link .hide-menu,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.active > .sidebar-link .hide-menu {
+        color: #004f7c !important;
+    }
+
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.selected > .has-arrow::after,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item.active > .has-arrow::after {
+        border-color: #004f7c !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .first-level {
+        padding: 2px 0 7px !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link,
+    body[data-theme="light"] .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link,
+    body[data-theme="dark"] .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link {
+        min-height: 39px !important;
+        margin: 2px 14px 2px 55px !important;
+        padding: 8px 13px !important;
+        border: 0 !important;
+        border-radius: 12px !important;
+        color: #13213c !important;
+        font-weight: 400 !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link i {
+        display: none !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link:hover,
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item .sidebar-link:focus-visible {
+        background: #f1f5f8 !important;
+        color: #004f7c !important;
+    }
+
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item.active > .sidebar-link,
+    .sidebar-reference .sidebar-nav ul .first-level .sidebar-item.selected > .sidebar-link,
+    body[data-theme="light"] .sidebar-reference .sidebar-nav ul .first-level .sidebar-item.active > .sidebar-link,
+    body[data-theme="dark"] .sidebar-reference .sidebar-nav ul .first-level .sidebar-item.active > .sidebar-link {
+        border: 0 !important;
+        border-radius: 12px !important;
+        background: #e7f0f6 !important;
+        color: #004f7c !important;
+        font-weight: 600 !important;
+    }
+
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item:last-child > .sidebar-link,
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item:last-child > .sidebar-link i {
+        color: #13213c !important;
+    }
+
+    .sidebar-reference .sidebar-nav > ul > .sidebar-item:last-child > .sidebar-link:hover {
+        background: #f1f5f8 !important;
+        color: #004f7c !important;
+    }
+
+    /* The vendor theme uses an ID plus data attributes for its dark skin.
+       Keep these final rules equally explicit so the light sidebar cannot be
+       overridden when app.init.js applies its runtime sidebar attributes. */
+    #main-wrapper .left-sidebar.sidebar-reference,
+    #main-wrapper .left-sidebar.sidebar-reference .scroll-sidebar,
+    #main-wrapper .left-sidebar.sidebar-reference .sidebar-nav,
+    #main-wrapper .left-sidebar.sidebar-reference .sidebar-nav > #sidebarnav,
+    #main-wrapper .left-sidebar.sidebar-reference .sidebar-nav #sidebarnav ul {
+        background: #ffffff !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .sidebar-item > .sidebar-link {
+        background: transparent !important;
+        color: #13213c !important;
+        opacity: 1 !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .sidebar-item > .sidebar-link i,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .sidebar-item > .sidebar-link .hide-menu {
+        color: inherit !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav > .sidebar-item > .sidebar-link i {
+        color: #71809a !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .sidebar-item > .sidebar-link:hover,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .sidebar-item > .sidebar-link:focus-visible {
+        background: #f1f5f8 !important;
+        color: #004f7c !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav > .sidebar-item.selected > .sidebar-link,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav > .sidebar-item.active > .sidebar-link,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .first-level > .sidebar-item.selected > .sidebar-link,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .first-level > .sidebar-item.active > .sidebar-link {
+        border: 0 !important;
+        border-radius: 12px !important;
+        background: #e7f0f6 !important;
+        color: #004f7c !important;
+        opacity: 1 !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav > .sidebar-item.selected > .sidebar-link i,
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav > .sidebar-item.active > .sidebar-link i {
+        color: #004f7c !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .first-level:not(.in) {
+        display: none !important;
+    }
+
+    #main-wrapper .sidebar-reference .sidebar-nav #sidebarnav .first-level.in {
+        display: block !important;
+    }
 
 </style>

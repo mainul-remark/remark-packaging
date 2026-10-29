@@ -201,6 +201,7 @@
     window.__PACK_POS_URLS__ = {
         station: @json(route('package-station')),
         find: @json(route('package-station.find')),
+        data: @json(route('package-station.data')),
         batch: @json(route('package-station.store')),
         labelPrints: @json(route('cartons.label-prints'))
     };

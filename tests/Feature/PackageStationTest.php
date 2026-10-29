@@ -43,6 +43,17 @@ it('lists open orders and opens the workspace for one', function (): void {
     $this->get(route('package-station', ['order' => $this->order->id]))->assertOk()->assertSee('Fresh Mart Superstores');
 });
 
+it('serves the order list and a workspace as JSON so the station can switch orders without reloading', function (): void {
+    $this->getJson(route('package-station.data'))->assertOk()
+        ->assertJsonPath('data.workOrder.id', '')
+        ->assertJsonPath('orders.0.number', 'SO-1001')
+        ->assertJsonMissingPath('order');
+
+    $this->getJson(route('package-station.data', ['order' => $this->order->id]))->assertOk()
+        ->assertJsonPath('data.workOrder.id', (string) $this->order->id)
+        ->assertJsonPath('orders', []);
+});
+
 it('includes existing carton barcodes, carton types, and quantities in the workspace', function (): void {
     storeCartons([cartonSpec()])->assertCreated();
 

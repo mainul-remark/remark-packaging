@@ -17,7 +17,7 @@ Route::get('admin', fn () => redirect()->route('login'));
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
 
-//        Route::post('/logout', [DashboardController::class, 'logout']);
+        //        Route::post('/logout', [DashboardController::class, 'logout']);
         Route::get('/my-profile', [UsersController::class, 'profile']);
         Route::post('/update-profile', [UsersController::class, 'updateProfile']);
         Route::get('/password-change', [UsersController::class, 'pwChange']);
@@ -29,6 +29,7 @@ Route::prefix('admin')->group(function () {
         Route::resource('product-categories', ProductCategoryController::class)->only(['index', 'show']);
 
         Route::get('package-station', [PackageStationController::class, 'index'])->name('package-station');
+        Route::get('package-station/data', [PackageStationController::class, 'data'])->name('package-station.data');
         Route::get('package-station/find', [PackageStationController::class, 'find'])->name('package-station.find');
         Route::post('package-station/cartons', [PackageStationController::class, 'store'])->name('package-station.store');
         Route::post('/cartons/label-prints', [CartonController::class, 'printLabelsFirst'])->name('cartons.label-prints');

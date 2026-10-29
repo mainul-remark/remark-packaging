@@ -15,6 +15,7 @@ use App\Models\PackagingMaterial;
 use App\Models\ProductWeightSpec;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,17 +26,13 @@ class PackageStationController extends Controller
     /** Without ?order= the station lists packable orders; with it, the packing workspace for that order opens. */
     public function index(Request $request): View
     {
-        $selected = $request->integer('order');
-        $order = $selected ? Order::query()->with(['customer', 'destination', 'items.product.barcodes', 'items.product.brand'])->findOrFail($selected) : null;
-        $packable = $this->packableOrders();
+        return view('admin.package-station.index', $this->stationPayload($request->integer('order')) + ['labelConfig' => config('packaging.label')]);
+    }
 
-        return view('admin.package-station.index', [
-            'order' => $order,
-            'data' => $order ? $this->workspace($order) : $this->emptyWorkspace(),
-            'orders' => $order ? [] : $packable['rows'],
-            'orderTotal' => $packable['total'],
-            'labelConfig' => config('packaging.label'),
-        ]);
+    /** The same station payload as the page, so the packing script can switch orders without a page load. */
+    public function data(Request $request): JsonResponse
+    {
+        return response()->json(Arr::except($this->stationPayload($request->integer('order')), 'order'));
     }
 
     /** Opens the open order that matches an invoice or order number, so the station's search box can jump to it. */
@@ -91,6 +88,20 @@ class PackageStationController extends Controller
             ], $result['cartons']),
             'replayed' => $result['replayed'],
         ]], $result['replayed'] ? 200 : 201);
+    }
+
+    /** @return array{order: ?Order, data: array<string, mixed>, orders: list<array<string, mixed>>, orderTotal: int} */
+    private function stationPayload(int $selected): array
+    {
+        $order = $selected ? Order::query()->with(['customer', 'destination', 'items.product.barcodes', 'items.product.brand'])->findOrFail($selected) : null;
+        $packable = $this->packableOrders();
+
+        return [
+            'order' => $order,
+            'data' => $order ? $this->workspace($order) : $this->emptyWorkspace(),
+            'orders' => $order ? [] : $packable['rows'],
+            'orderTotal' => $packable['total'],
+        ];
     }
 
     /** @return array{rows: list<array<string, mixed>>, total: int} */

@@ -1,4 +1,8 @@
-<aside class="left-sidebar">
+@php
+    $packagingMenuOpen = request()->routeIs('package-station', 'carton-cross-check', 'cartons.*');
+@endphp
+
+<aside class="left-sidebar sidebar-reference" data-sidebarbg="skin6">
     <div class="scroll-sidebar">
         <nav class="sidebar-nav">
             <ul id="sidebarnav">
@@ -77,27 +81,27 @@
                 </li>
 
                     {{-- Packaging Management --}}
-                    <li class="sidebar-item">
-                        <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
+                    <li class="sidebar-item {{ $packagingMenuOpen ? 'selected' : '' }}">
+                        <a class="sidebar-link has-arrow waves-effect waves-dark {{ $packagingMenuOpen ? 'active' : '' }}" href="javascript:void(0)" aria-expanded="{{ $packagingMenuOpen ? 'true' : 'false' }}">
                             <i class="mdi mdi-account-multiple-plus"></i>
                             <span class="hide-menu">Packaging</span>
                         </a>
 
-                        <ul aria-expanded="false" class="collapse first-level">
-                            <li class="sidebar-item">
-                                <a href="{{ route('package-station') }}" class="sidebar-link">
+                        <ul aria-expanded="{{ $packagingMenuOpen ? 'true' : 'false' }}" class="collapse first-level {{ $packagingMenuOpen ? 'in' : '' }}">
+                            <li class="sidebar-item {{ request()->routeIs('package-station') ? 'active' : '' }}">
+                                <a href="{{ route('package-station') }}" class="sidebar-link {{ request()->routeIs('package-station') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Package Carton</span>
                                 </a>
                             </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('carton-cross-check') }}" class="sidebar-link">
+                            <li class="sidebar-item {{ request()->routeIs('carton-cross-check') ? 'active' : '' }}">
+                                <a href="{{ route('carton-cross-check') }}" class="sidebar-link {{ request()->routeIs('carton-cross-check') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Cross Check Carton</span>
                                 </a>
                             </li>
-                            <li class="sidebar-item">
-                                <a href="{{ route('cartons.index') }}" class="sidebar-link">
+                            <li class="sidebar-item {{ request()->routeIs('cartons.*') ? 'active' : '' }}">
+                                <a href="{{ route('cartons.index') }}" class="sidebar-link {{ request()->routeIs('cartons.*') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Cartons</span>
                                 </a>

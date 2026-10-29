@@ -226,7 +226,7 @@ function renderWorkOrderPicker(filter = "") {
     document.querySelector(".product-filter").after(caption);
   }
   caption.textContent = total > list.length && !query ? `Remaining orders to pack · showing ${list.length} of ${total}` : "Remaining orders to pack";
-  $("#invoice-product-list").innerHTML = list.map(wo => `<a class="invoice-product work-order-link" href="${urls.station}?order=${encodeURIComponent(wo.id)}">
+  $("#invoice-product-list").innerHTML = list.map(wo => `<a class="invoice-product work-order-link" data-order-id="${escapeHtml(wo.id)}" href="${urls.station}?order=${encodeURIComponent(wo.id)}">
       <div class="product-title"><span class="product-name"><strong>${escapeHtml(wo.number)}</strong><small>${escapeHtml(wo.order)} · ${escapeHtml(wo.status)}</small></span><span class="product-qty"><b>${number(wo.units)}</b> <small>pcs</small><small style="display:block;text-align:right">${number(wo.lines)} product${wo.lines === 1 ? "" : "s"}</small></span></div>
     </a>`).join("") || `<div class="empty-row" style="margin:18px">No orders are ready for packing.</div>`;
 }
@@ -282,6 +282,30 @@ function renderInvoiceProducts(filter = "") {
   renderPackedCartons();
 }
 
+// Loads an order's workspace (or the order picker when id is empty) over AJAX and re-mounts the page without a reload.
+let openingOrder = false;
+async function openOrder(id, pushHistory = true, filterText = null) {
+  if (openingOrder) return;
+  openingOrder = true;
+  try {
+    showToast("Loading…");
+    const query = id ? `?order=${encodeURIComponent(id)}` : "";
+    const response = await fetch(`${urls.data}${query}`, { headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } });
+    if (!response.ok) throw new Error("load failed");
+    const payload = await response.json();
+    window.__PACK_POS_DATA__ = payload.data;
+    window.__PACK_POS_WORK_ORDERS__ = payload.orders;
+    window.__PACK_POS_WORK_ORDER_TOTAL__ = payload.orderTotal;
+    mountWorkspace(filterText);
+    if (pushHistory) history.pushState({ order: id }, "", `${urls.station}${query}`);
+    window.scrollTo({ top: 0 });
+  } catch (error) {
+    showToast("Could not load the order. Please try again.", true);
+  } finally {
+    openingOrder = false;
+  }
+}
+
 // Looks an invoice or order number up on the server, then opens that order.
 async function findInvoice(rawTerm) {
   const term = rawTerm.trim();
@@ -292,7 +316,7 @@ async function findInvoice(rawTerm) {
     if (response.status === 404) return showToast(`No open order or invoice found for "${term}".`, true);
     if (!response.ok) throw new Error("search failed");
     const body = await response.json();
-    window.location.assign(`${urls.station}?order=${encodeURIComponent(body.data.id)}`);
+    await openOrder(body.data.id, true, term);
   } catch (error) {
     showToast("Search failed. Please try again.", true);
   }
@@ -684,7 +708,7 @@ async function confirmCartons(event) {
     renderHistory();
     finish();
     // Once the labels have gone to the printer, return to the package station.
-    if (await printLabelsOnce(created.filter(Boolean))) window.location.assign(urls.station);
+    if (await printLabelsOnce(created.filter(Boolean))) await openOrder("");
   } catch (error) {
     button.disabled = false;
     button.textContent = "Confirm all cartons";
@@ -1085,6 +1109,13 @@ function bindEvents() {
   $("#product-filter").addEventListener("search", event => {
     if (event.target.value.trim()) findInvoice(event.target.value);
   });
+  $("#invoice-product-list").addEventListener("click", event => {
+    const link = event.target.closest("a.work-order-link");
+    if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    openOrder(link.dataset.orderId);
+  });
+  window.addEventListener("popstate", () => openOrder(new URLSearchParams(window.location.search).get("order") || "", false));
   document.querySelector("#finish-cartons").addEventListener("click", () => goToStep(2));
   document.querySelector("#collapse-all-cartons").addEventListener("click", collapseAllDrafts);
   document.querySelector("#back-to-cartons").addEventListener("click", () => goToStep(1));
@@ -1108,13 +1139,19 @@ function syncWorkOrderVisibility() {
   document.querySelector(".session-workflow-main").hidden = !selected;
 }
 
-async function init() {
+// Builds (or rebuilds) the whole workspace from window.__PACK_POS_*; every piece of per-order state is reset first.
+function mountWorkspace(filterText = null) {
   const host = document.querySelector("#carton-accordion");
-  if (!host || host.dataset.packPosReady) return;
-  host.dataset.packPosReady = "1";
-  state.data = await loadData();
-  const initialRoot = document.querySelector(".builder-panel");
-  state.builderTemplate = initialRoot.outerHTML;
+  Object.assign(state, { mode: "", step: 1, packageRows: [], cartonProducts: [], nextCarton: 1, drafts: [], activeDraft: null, sessionCartons: [], sessionSpecs: [], batchKey: null });
+  state.data = structuredClone({ packagingItems: [], ...window.__PACK_POS_DATA__ });
+  if (!state.builderTemplate) state.builderTemplate = host.querySelector(".builder-panel").outerHTML;
+  host.innerHTML = state.builderTemplate;
+  const initialRoot = host.querySelector(".builder-panel");
+  resetSessionUi();
+  productSearch.productId = "";
+  productSearch.active = -1;
+  // An open order keeps its code in the search box (what was typed, else the order number); the picker starts empty.
+  document.querySelector("#product-filter").value = state.data.workOrder.id ? (filterText ?? state.data.workOrder.number) : "";
   registerDraft(initialRoot, `C${String(state.nextCarton).padStart(3, "0")}`);
   state.nextCarton += 1;
   initializeHeader();
@@ -1128,6 +1165,30 @@ async function init() {
   renderSummary();
   syncWorkOrderVisibility();
   bindBuilderEvents(initialRoot);
+}
+
+// Puts the wizard, review panel and confirm button back to their fresh-session look.
+function resetSessionUi() {
+  document.querySelector("#session-review").hidden = true;
+  document.querySelector("#session-finish-action").hidden = true;
+  document.querySelector("#review-grid").innerHTML = "";
+  document.querySelector("#review-products").innerHTML = "";
+  document.querySelectorAll("#session-wizard li").forEach(item => {
+    const itemStep = Number(item.dataset.step);
+    item.classList.toggle("active", itemStep === 1);
+    item.classList.remove("complete");
+    item.querySelector(":scope > span").textContent = itemStep;
+  });
+  const confirm = document.querySelector("#confirm-cartons");
+  confirm.disabled = false;
+  confirm.textContent = "Confirm all cartons";
+}
+
+async function init() {
+  const host = document.querySelector("#carton-accordion");
+  if (!host || host.dataset.packPosReady) return;
+  host.dataset.packPosReady = "1";
+  mountWorkspace();
   bindEvents();
 }
 

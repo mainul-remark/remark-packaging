@@ -79,6 +79,20 @@ $(function () {
             dataSrc: function (json) { updateCounts(json.counts || {}); return json.data; },
             error: function () { toast('The carton list could not be loaded. Please try again.'); }
         },
+        // Consecutive cartons of one order share a single merged order cell. Rows arrive ordered by order,
+        // so merging the current page's runs is enough; an order split across two pages repeats its cell.
+        drawCallback: function () {
+            var runs = [], last = null;
+            this.api().rows({ page: 'current' }).every(function () {
+                var row = this.data(), node = this.node();
+                if (last && last.order === row.order_number) { last.nodes.push(node); } else { last = { order: row.order_number, nodes: [node] }; runs.push(last); }
+            });
+            runs.forEach(function (run) {
+                var $cell = $(run.nodes[0]).children().first(), count = run.nodes.length;
+                $cell.attr('rowspan', count).append('<small>' + count + ' ' + (count === 1 ? 'carton' : 'cartons') + '</small>');
+                run.nodes.slice(1).forEach(function (node) { $(node).children().first().remove(); });
+            });
+        },
         language: { processing: 'Loading cartons…', emptyTable: 'No cartons found. Create cartons in the package station.', zeroRecords: 'No cartons found. Try a different search or status filter.', info: '_TOTAL_ cartons', infoEmpty: '0 cartons', infoFiltered: '' },
         columns: [
             { data: 'order_number', className: 'ct-work-order', render: function (data, type, row) { return type !== 'display' ? data : '<strong>' + escapeHtml(data) + '</strong>' + (row.invoice_number ? '<small>Invoice: ' + escapeHtml(row.invoice_number) + '</small>' : ''); } },

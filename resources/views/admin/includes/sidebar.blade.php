@@ -80,7 +80,7 @@
                     <li class="sidebar-item">
                         <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
                             <i class="mdi mdi-account-multiple-plus"></i>
-                            <span class="hide-menu">Package Management</span>
+                            <span class="hide-menu">Packaging</span>
                         </a>
 
                         <ul aria-expanded="false" class="collapse first-level">

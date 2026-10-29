@@ -3,88 +3,100 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use Spatie\Activitylog\Models\Activity;
-use Yajra\DataTables\Facades\DataTables;
 
 class ActivityLogController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        if ($request->ajax()) {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'event' => ['nullable', 'string', 'max:50'],
+            'log_name' => ['nullable', 'string', 'max:191'],
+            'subject_type' => ['nullable', 'string', 'max:191'],
+            'causer_id' => ['nullable', 'integer', 'exists:users,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
 
-            $query = Activity::query()
-                ->with('causer')
-                ->select('activity_log.*');
+        $activityLogs = $this->applyFilters(
+            Activity::query()->with(['causer', 'subject'])->latest(),
+            $filters,
+        )->paginate(15)->withQueryString();
 
-            return DataTables::eloquent($query)
+        $summaryQuery = $this->applyFilters(Activity::query(), $filters);
+        $summary = [
+            'total' => (clone $summaryQuery)->count(),
+            'today' => (clone $summaryQuery)->whereDate('created_at', today())->count(),
+            'created' => (clone $summaryQuery)->where('event', 'created')->count(),
+            'updated' => (clone $summaryQuery)->where('event', 'updated')->count(),
+            'deleted' => (clone $summaryQuery)->where('event', 'deleted')->count(),
+        ];
 
-                ->addColumn('user', function ($row) {
-                    return $row->causer?->name ?? 'System';
-                })
+        $eventOptions = Activity::query()
+            ->whereNotNull('event')->distinct()->orderBy('event')->pluck('event');
+        $logNameOptions = Activity::query()
+            ->whereNotNull('log_name')->distinct()->orderBy('log_name')->pluck('log_name');
+        $subjectTypeOptions = Activity::query()
+            ->whereNotNull('subject_type')->distinct()->orderBy('subject_type')->pluck('subject_type')
+            ->map(fn (string $subjectType): array => [
+                'value' => $subjectType,
+                'label' => class_basename($subjectType),
+            ]);
+        $causerOptions = User::query()
+            ->select('id', 'name', 'email')->orderBy('name')->get();
 
-                ->addColumn('activity', function ($row) {
-                    return ucfirst($row->event ?? 'activity');
-                })
-
-                ->addColumn('module', function ($row) {
-                    return ucfirst($row->log_name ?? 'default');
-                })
-
-                ->addColumn('subject', function ($row) {
-                    if (! $row->subject_type || ! $row->subject_id) {
-                        return '-';
-                    }
-
-                    return class_basename($row->subject_type)
-                        .' #'.$row->subject_id;
-                })
-
-                ->addColumn('url', function ($row) {
-                    return $row->properties->get('url', '-');
-                })
-
-                ->addColumn('ip_address', function ($row) {
-                    return $row->properties->get('ip', '-');
-                })
-
-                ->addColumn('device_browser', function ($row) {
-                    return $row->properties->get('user_agent', '-');
-                })
-
-                ->editColumn('description', function ($row) {
-                    return $row->description;
-                })
-
-                ->editColumn('created_at', function ($row) {
-                    return $row->created_at
-                        ? $row->created_at->format('d M Y, h:i A')
-                        : '-';
-                })
-
-                ->rawColumns(['details'])
-                ->make(true);
-        }
-
-        return view('admin.activity-log.index');
+        return view('admin.activity-log.index', compact(
+            'activityLogs',
+            'summary',
+            'filters',
+            'eventOptions',
+            'logNameOptions',
+            'subjectTypeOptions',
+            'causerOptions',
+        ));
     }
 
-    public function show(Activity $activity)
+    /** @param array<string, mixed> $filters */
+    private function applyFilters(Builder $query, array $filters): Builder
     {
-        $activity->load('causer');
+        $search = trim((string) ($filters['search'] ?? ''));
 
-        return response()->json([
-            'id' => $activity->id,
-            'user' => $activity->causer?->name ?? 'System',
-            'log_name' => $activity->log_name,
-            'description' => $activity->description,
-            'event' => $activity->event,
-            'subject' => $activity->subject_type
-                ? class_basename($activity->subject_type)
-                .' #'.($activity->subject_id ?? '-')
-                : '-',
-            'properties' => $activity->properties->toArray(),
-            'created_at' => $activity->created_at?->format('d M Y, h:i A'),
-        ]);
+        if ($search !== '') {
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder->where('description', 'like', "%{$search}%")
+                    ->orWhere('event', 'like', "%{$search}%")
+                    ->orWhere('log_name', 'like', "%{$search}%")
+                    ->orWhere('subject_type', 'like', "%{$search}%")
+                    ->orWhere('causer_type', 'like', "%{$search}%")
+                    ->orWhere('properties', 'like', "%{$search}%");
+            });
+        }
+
+        if (filled($filters['event'] ?? null)) {
+            $query->where('event', $filters['event']);
+        }
+        if (filled($filters['log_name'] ?? null)) {
+            $query->where('log_name', $filters['log_name']);
+        }
+        if (filled($filters['subject_type'] ?? null)) {
+            $query->where('subject_type', $filters['subject_type']);
+        }
+        if (filled($filters['causer_id'] ?? null)) {
+            $query->where('causer_type', User::class)
+                ->where('causer_id', (int) $filters['causer_id']);
+        }
+        if (filled($filters['date_from'] ?? null)) {
+            $query->whereDate('created_at', '>=', $filters['date_from']);
+        }
+        if (filled($filters['date_to'] ?? null)) {
+            $query->whereDate('created_at', '<=', $filters['date_to']);
+        }
+
+        return $query;
     }
 }

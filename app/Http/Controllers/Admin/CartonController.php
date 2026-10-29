@@ -22,9 +22,13 @@ class CartonController extends Controller
         $cartons = Carton::query()->with(['order', 'cartonType'])->withCount('labelPrints')
             ->when($request->string('status')->toString(), fn ($query, string $status) => $query->where('status', $status))
             ->when($request->string('q')->trim()->toString(), fn ($query, string $search) => $query->where(function ($inner) use ($search): void {
-                $inner->where('carton_number', 'like', "%{$search}%")->orWhere('seal_number', 'like', "%{$search}%");
+                $inner->where('carton_number', 'like', "%{$search}%")
+                    ->orWhere('seal_number', 'like', "%{$search}%")
+                    ->orWhereHas('order', fn ($orderQuery) => $orderQuery
+                        ->where('order_number', 'like', "%{$search}%")
+                        ->orWhere('invoice_number', 'like', "%{$search}%"));
             }))
-            ->orderByDesc('id')->paginate(25)->withQueryString();
+            ->orderByDesc('order_id')->orderByDesc('id')->paginate(25)->withQueryString();
 
         return view('admin.package-station.cartons', [
             'cartons' => $cartons, 'counts' => $counts, 'activeStatus' => $request->string('status')->toString(), 'labelConfig' => config('packaging.label'),

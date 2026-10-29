@@ -92,6 +92,31 @@ it('lists cartons and shows a carton with its actions', function (): void {
     $this->get(route('cartons.show', $carton))->assertOk()->assertSee('Send to scale');
 });
 
+it('groups cartons by order and finds the group by invoice or order number', function (): void {
+    $carton = packWholeOrder();
+    $secondCarton = $carton->replicate();
+    $secondCarton->carton_number = $carton->carton_number.'-COPY';
+    $secondCarton->batch_key = (string) Str::uuid();
+    $secondCarton->save();
+
+    $this->get(route('cartons.index'))
+        ->assertOk()
+        ->assertSee('rowspan="2"', false)
+        ->assertSeeText('2 cartons')
+        ->assertSeeText($carton->order->order_number)
+        ->assertSeeText('Invoice: '.$carton->order->invoice_number);
+
+    $this->get(route('cartons.index', ['q' => $carton->order->invoice_number]))
+        ->assertOk()
+        ->assertSee($carton->carton_number)
+        ->assertSee($secondCarton->carton_number);
+
+    $this->get(route('cartons.index', ['q' => $carton->order->order_number]))
+        ->assertOk()
+        ->assertSee($carton->carton_number)
+        ->assertSee($secondCarton->carton_number);
+});
+
 it('shows the cross-check workflow in physical, contents, and decision order', function (): void {
     $this->get(route('carton-cross-check'))
         ->assertOk()

@@ -15,14 +15,33 @@ class RoleTableSeeder extends Seeder
 
         $permissions = [
             'dashboard.view',
+
+            'orders.view',
+
+            'products.view',
+            'brands.view',
+            'product-categories.view',
+
+            'package-station.view',
+            'package-station.create',
+
+            'carton-cross-check.view',
+            'carton-cross-check.process',
+
+            'cartons.view',
+            'cartons.update',
+            'cartons.print',
+
             'roles.view',
             'roles.create',
             'roles.update',
             'roles.delete',
+
             'users.view',
             'users.create',
             'users.update',
             'users.delete',
+
             'activity-log.view',
         ];
 

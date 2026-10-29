@@ -17,7 +17,7 @@ Route::get('admin', fn () => redirect()->route('login'));
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
 
-        Route::post('/logout', [DashboardController::class, 'logout']);
+//        Route::post('/logout', [DashboardController::class, 'logout']);
         Route::get('/my-profile', [UsersController::class, 'profile']);
         Route::post('/update-profile', [UsersController::class, 'updateProfile']);
         Route::get('/password-change', [UsersController::class, 'pwChange']);

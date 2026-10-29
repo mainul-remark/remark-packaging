@@ -9,11 +9,14 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RoleTableSeeder extends Seeder
 {
-    public function run(): void
+    /**
+     * Permissions that ship with the application.
+     *
+     * @return array<int, string>
+     */
+    public static function permissions(): array
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
-
-        $permissions = [
+        return [
             'dashboard.view',
 
             'orders.view',
@@ -44,6 +47,13 @@ class RoleTableSeeder extends Seeder
 
             'activity-log.view',
         ];
+    }
+
+    public function run(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $permissions = self::permissions();
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([

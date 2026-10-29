@@ -8,14 +8,17 @@
             <ul id="sidebarnav">
 
                     {{-- Dashboard --}}
+                    @can('dashboard.view')
                     <li class="sidebar-item">
                         <a class="sidebar-link waves-effect waves-dark" href="{{ route('dashboard') }}">
                             <i class="mdi mdi-view-dashboard"></i>
                             <span class="hide-menu">DASHBOARD</span>
                         </a>
                     </li>
+                    @endcan
 
                     {{-- User Management --}}
+                    @canany(['roles.view', 'users.view'])
                     <li class="sidebar-item">
                         <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
                             <i class="mdi mdi-account-multiple-plus"></i>
@@ -42,15 +45,19 @@
 
                         </ul>
                     </li>
+                    @endcanany
 
+                @can('orders.view')
                 <li class="sidebar-item">
                     <a class="sidebar-link waves-effect waves-dark" href="{{ route('orders.index') }}">
                         <i class="mdi mdi-view-dashboard"></i>
                         <span class="hide-menu">Orders</span>
                     </a>
                 </li>
+                @endcan
 
-                {{-- Packaging Management --}}
+                {{-- Product Management --}}
+                @canany(['product-categories.view', 'brands.view', 'products.view'])
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
                         <i class="mdi mdi-account-multiple-plus"></i>
@@ -58,29 +65,37 @@
                     </a>
 
                     <ul aria-expanded="false" class="collapse first-level">
+                        @can('product-categories.view')
                         <li class="sidebar-item">
                             <a href="{{ route('product-categories.index') }}" class="sidebar-link">
                                 <i class="mdi mdi-adjust"></i>
                                 <span class="hide-menu">Category</span>
                             </a>
                         </li>
+                        @endcan
+                        @can('brands.view')
                         <li class="sidebar-item">
                             <a href="{{ route('brands.index') }}" class="sidebar-link">
                                 <i class="mdi mdi-adjust"></i>
                                 <span class="hide-menu">Brand</span>
                             </a>
                         </li>
+                        @endcan
+                        @can('products.view')
                         <li class="sidebar-item">
                             <a href="{{ route('products.index') }}" class="sidebar-link">
                                 <i class="mdi mdi-adjust"></i>
                                 <span class="hide-menu">Products</span>
                             </a>
                         </li>
+                        @endcan
 
                     </ul>
                 </li>
+                @endcanany
 
                     {{-- Packaging Management --}}
+                    @canany(['package-station.view', 'carton-cross-check.view', 'cartons.view'])
                     <li class="sidebar-item {{ $packagingMenuOpen ? 'selected' : '' }}">
                         <a class="sidebar-link has-arrow waves-effect waves-dark {{ $packagingMenuOpen ? 'active' : '' }}" href="javascript:void(0)" aria-expanded="{{ $packagingMenuOpen ? 'true' : 'false' }}">
                             <i class="mdi mdi-account-multiple-plus"></i>
@@ -88,29 +103,37 @@
                         </a>
 
                         <ul aria-expanded="{{ $packagingMenuOpen ? 'true' : 'false' }}" class="collapse first-level {{ $packagingMenuOpen ? 'in' : '' }}">
+                            @can('package-station.view')
                             <li class="sidebar-item {{ request()->routeIs('package-station') ? 'active' : '' }}">
                                 <a href="{{ route('package-station') }}" class="sidebar-link {{ request()->routeIs('package-station') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Package Carton</span>
                                 </a>
                             </li>
+                            @endcan
+                            @can('carton-cross-check.view')
                             <li class="sidebar-item {{ request()->routeIs('carton-cross-check') ? 'active' : '' }}">
                                 <a href="{{ route('carton-cross-check') }}" class="sidebar-link {{ request()->routeIs('carton-cross-check') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Cross Check Carton</span>
                                 </a>
                             </li>
+                            @endcan
+                            @can('cartons.view')
                             <li class="sidebar-item {{ request()->routeIs('cartons.*') ? 'active' : '' }}">
                                 <a href="{{ route('cartons.index') }}" class="sidebar-link {{ request()->routeIs('cartons.*') ? 'active' : '' }}">
                                     <i class="mdi mdi-adjust"></i>
                                     <span class="hide-menu">Cartons</span>
                                 </a>
                             </li>
+                            @endcan
 
                         </ul>
                     </li>
+                    @endcanany
 
                     {{-- Settings --}}
+                    @can('activity-log.view')
                     <li class="sidebar-item">
                         <a class="sidebar-link has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
                             <i class="mdi mdi-settings"></i>
@@ -128,6 +151,7 @@
                             @endcan
                         </ul>
                     </li>
+                    @endcan
 
 
                 {{-- Logout --}}

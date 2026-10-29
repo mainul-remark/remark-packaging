@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureRoutePermission;
 use App\Models\User;
 use Database\Seeders\RoleTableSeeder;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -87,4 +89,55 @@ test('authorized users can create users and assign Spatie roles', function () {
         ->assertRedirect(route('users.index'));
 
     expect(User::where('email', 'operator@example.com')->firstOrFail()->hasRole('production-operator'))->toBeTrue();
+});
+
+test('every operational page route requires its permission', function (string $routeName, string $permission) {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route($routeName))->assertForbidden();
+
+    $user->givePermissionTo($permission);
+
+    expect($this->actingAs($user)->get(route($routeName))->status())->not->toBe(403);
+})->with([
+    ['orders.index', 'orders.view'],
+    ['products.index', 'products.view'],
+    ['brands.index', 'brands.view'],
+    ['product-categories.index', 'product-categories.view'],
+    ['package-station', 'package-station.view'],
+    ['package-station.data', 'package-station.view'],
+    ['carton-cross-check', 'carton-cross-check.view'],
+    ['cartons.index', 'cartons.view'],
+]);
+
+test('every protected route resolves to a seeded permission', function () {
+    $protected = collect(app('router')->getRoutes()->getRoutesByName())
+        ->filter(fn ($route) => in_array('route.permission', $route->gatherMiddleware(), true));
+
+    expect($protected)->not->toBeEmpty();
+
+    $protected->each(function ($route, string $name) {
+        $this->actingAs(User::factory()->create()->assignRole('administrator'));
+
+        // administrator holds every seeded permission, so a 403 here means the permission is missing
+        $request = Request::create('/');
+        $request->setRouteResolver(fn () => $route);
+        $request->setUserResolver(fn () => auth()->user());
+
+        $response = (new EnsureRoutePermission)->handle($request, fn () => response('ok'));
+
+        expect($response->getContent())->toBe('ok', "Route [{$name}] has no seeded permission.");
+    });
+});
+
+test('permissions:sync inserts seeder and config permissions and assigns all to user 1', function () {
+    config(['custom-permissions' => ['reports.view']]);
+    $user = User::factory()->create(['id' => 1]);
+
+    $this->artisan('permissions:sync')->assertSuccessful();
+    $this->artisan('permissions:sync')->assertSuccessful();
+
+    expect(Permission::where('name', 'reports.view')->count())->toBe(1)
+        ->and($user->fresh()->hasDirectPermission('reports.view'))->toBeTrue()
+        ->and($user->fresh()->hasDirectPermission('dashboard.view'))->toBeTrue();
 });

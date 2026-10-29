@@ -1,6 +1,6 @@
 // Carton label (100 x 150 mm). Shared by the package station (printed after saving cartons) and the carton label page.
 // carton: { number, boxNumber, invoice, type, destination, weight, toleranceLower, toleranceUpper, packedAt?, contents: [{ brand, name, sku, quantity, netWeight }] }
-// Fixed text (company group, from, route) comes from window.__PACK_POS_LABEL__.
+// Fixed text (company group, from) comes from window.__PACK_POS_LABEL__.
 (function () {
 const number = value => new Intl.NumberFormat("en-US").format(value);
 
@@ -64,7 +64,6 @@ function cartonLabelHtml(carton) {
     <div class="route">
       <div><small>From (Packing Location)</small><strong>${escapeHtml(label.from || "—")}</strong></div>
       <div><small>Destination</small><strong>${escapeHtml(carton.destination || "—")}</strong></div>
-      <div class="wide"><small>Route</small><strong>${escapeHtml(label.route || "—")}</strong></div>
     </div>
     <table class="items"><colgroup><col class="sl"><col class="brand"><col><col class="sku"><col class="qty"><col class="net"></colgroup><thead><tr><th class="c">SL</th><th>Brand Name</th><th>Product / SKU Name</th><th>SKU Code</th><th class="c">Qty</th><th class="c">Net Weight</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="stats">
@@ -86,9 +85,9 @@ const css = `
     .brand{min-width:0}.brand b{display:block;font:900 8mm/1 "Arial Black",Impact,Arial,sans-serif;letter-spacing:-.3mm;white-space:nowrap}.brand b span{position:relative}.brand b sup{position:absolute;top:-.6mm;left:1.6mm;font-size:4.2mm;line-height:1}.brand small{display:block;margin-top:.8mm;font-size:2.4mm;font-weight:700;white-space:nowrap}
     .box{min-width:0;padding:.9mm 1.3mm;border:.3mm solid #000}.box small{display:block;font-size:1.8mm;font-weight:700;text-transform:uppercase;white-space:nowrap}.box strong{display:block;margin-top:.7mm;font-size:3mm;line-height:1.15;overflow-wrap:anywhere}.boxno{display:flex;flex-direction:column;justify-content:space-between;min-width:19mm}.boxno strong{margin:0;font-size:4.6mm;text-align:center;white-space:nowrap}
     .route{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:.3mm solid #000}.route>div{padding:1mm 1.5mm}.route>div:nth-child(even){border-left:.3mm solid #000}.route>div:nth-child(n+3){border-top:.3mm solid #000}.route>.wide{grid-column:1/-1;border-left:0!important}.route small{display:block;font-size:1.8mm;font-weight:700;text-transform:uppercase}.route strong{display:block;margin-top:.5mm;font-size:3mm;line-height:1.15;overflow-wrap:anywhere}
-    .items{width:100%;border-collapse:collapse;table-layout:fixed;font-size:2.4mm}.items th{padding:.8mm .6mm;background:#000;color:#fff;font-size:2mm;text-align:left;text-transform:uppercase}.items td{padding:.7mm .7mm;border:.2mm solid #000;vertical-align:top;overflow-wrap:anywhere}.items .c{text-align:center}
-    .items col.sl{width:6mm}.items col.brand{width:15mm}.items col.sku{width:19mm}.items col.qty{width:8mm}.items col.net{width:15mm}
-    .frame.compact .items{font-size:2.1mm}.frame.compact .items td{padding:.4mm .6mm}.frame.dense .items{font-size:1.8mm}.frame.dense .items td{padding:.25mm .5mm}.frame.dense .items th{padding:.4mm .5mm;font-size:1.7mm}
+    .items{width:100%;border-collapse:collapse;table-layout:fixed;font-size:3mm}.items th{padding:.8mm .6mm;background:#000;color:#fff;font-size:2.3mm;text-align:left;text-transform:uppercase}.items td{padding:.7mm .7mm;border:.2mm solid #000;vertical-align:top;overflow-wrap:anywhere}.items .c{text-align:center}
+    .items col.sl{width:6mm}.items col.brand{width:15mm}.items col.sku{width:19mm}.items col.qty{width:10mm}.items col.net{width:17mm}
+    .frame.compact .items{font-size:2.6mm}.frame.compact .items td{padding:.4mm .6mm}.frame.dense .items{font-size:2.2mm}.frame.dense .items td{padding:.25mm .5mm}.frame.dense .items th{padding:.4mm .5mm;font-size:2mm}
     .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:.3mm solid #000}.stats>div{padding:1mm .8mm;text-align:center}.stats>div+div{border-left:.3mm solid #000}.stats small{display:block;font-size:1.7mm;font-weight:800;text-transform:uppercase;white-space:nowrap}.stats strong{display:block;margin-top:.6mm;font-size:3.1mm;line-height:1.15;overflow-wrap:anywhere}
     .bar{padding:1mm 0 .5mm}.bar svg{display:block;width:100%;height:22mm}.bar b{display:block;margin-top:1.2mm;font-size:4.2mm;letter-spacing:.2mm;text-align:center;overflow-wrap:anywhere}.frame.compact .bar svg{height:17mm}.frame.compact .bar b{font-size:3.6mm}.frame.dense .bar svg{height:11mm}.frame.dense .bar b{margin-top:.6mm;font-size:3.2mm}
   `;

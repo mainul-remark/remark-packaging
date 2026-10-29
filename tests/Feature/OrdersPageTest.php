@@ -4,10 +4,12 @@ use App\Models\CartonType;
 use App\Models\Order;
 use App\Models\User;
 use Database\Seeders\PackagingDemoSeeder;
+use Database\Seeders\RoleTableSeeder;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
-    $this->actingAs(User::factory()->create());
+    $this->seed(RoleTableSeeder::class);
+    $this->actingAs(User::factory()->create()->assignRole('administrator'));
 });
 
 it('shows an empty state before any orders exist', function (): void {

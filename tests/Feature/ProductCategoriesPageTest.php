@@ -4,9 +4,11 @@ use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\User;
+use Database\Seeders\RoleTableSeeder;
 
 beforeEach(function (): void {
-    $this->actingAs(User::factory()->create());
+    $this->seed(RoleTableSeeder::class);
+    $this->actingAs(User::factory()->create()->assignRole('administrator'));
 });
 
 it('shows the product category catalogue page', function (): void {

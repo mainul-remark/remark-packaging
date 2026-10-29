@@ -26,6 +26,22 @@ class EnsureRoutePermission
         'destroy' => 'delete',
     ];
 
+    /**
+     * Routes whose permission cannot be derived from the route name convention.
+     *
+     * @var array<string, string>
+     */
+    private const ROUTE_PERMISSIONS = [
+        'package-station.data' => 'package-station.view',
+        'package-station.find' => 'package-station.view',
+        'carton-cross-check.lookup' => 'carton-cross-check.view',
+        'carton-cross-check.store' => 'carton-cross-check.process',
+        'cartons.act' => 'cartons.update',
+        'cartons.label' => 'cartons.print',
+        'cartons.label-print' => 'cartons.print',
+        'cartons.label-prints' => 'cartons.print',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
         $routeName = $request->route()?->getName();
@@ -51,6 +67,10 @@ class EnsureRoutePermission
 
     private function permissionFor(string $routeName): string
     {
+        if (array_key_exists($routeName, self::ROUTE_PERMISSIONS)) {
+            return self::ROUTE_PERMISSIONS[$routeName];
+        }
+
         if (! str_contains($routeName, '.')) {
             return "{$routeName}.view";
         }

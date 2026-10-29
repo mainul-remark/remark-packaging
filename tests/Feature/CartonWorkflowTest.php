@@ -6,12 +6,14 @@ use App\Models\LabelPrintJob;
 use App\Models\Order;
 use App\Models\User;
 use Database\Seeders\PackagingDemoSeeder;
+use Database\Seeders\RoleTableSeeder;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(function (): void {
     $this->seed(PackagingDemoSeeder::class);
-    $this->actingAs(User::factory()->create());
+    $this->seed(RoleTableSeeder::class);
+    $this->actingAs(User::factory()->create()->assignRole('administrator'));
 });
 
 /** Packs every line of SO-1002 into one large carton: 18 x 2040 g + 40 x 515 g + 540 g tare = 57,860 g. */
@@ -87,34 +89,33 @@ it('prints a label once and requires a reason to reprint it', function (): void 
 it('lists cartons and shows a carton with its actions', function (): void {
     $carton = packWholeOrder();
 
-    $this->get(route('cartons.index'))->assertOk()->assertSee($carton->carton_number);
-    $this->get(route('cartons.index', ['q' => 'nothing-matches']))->assertOk()->assertSee('No cartons found');
+    $this->get(route('cartons.index'))->assertOk()->assertSee('cartonsDataTable');
+    $this->getJson(route('cartons.index'))->assertOk()->assertJsonPath('data.0.carton_number', $carton->carton_number)->assertJsonPath('counts.CONTENTS_VERIFIED', 1);
+    $this->getJson(route('cartons.index', ['q' => 'nothing-matches']))->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson(route('cartons.index', ['status' => 'SEALED']))->assertOk()->assertJsonCount(0, 'data');
     $this->get(route('cartons.show', $carton))->assertOk()->assertSee('Send to scale');
 });
 
-it('groups cartons by order and finds the group by invoice or order number', function (): void {
+it('finds the cartons of an order by invoice or order number', function (): void {
     $carton = packWholeOrder();
     $secondCarton = $carton->replicate();
     $secondCarton->carton_number = $carton->carton_number.'-COPY';
     $secondCarton->batch_key = (string) Str::uuid();
     $secondCarton->save();
 
-    $this->get(route('cartons.index'))
+    $this->getJson(route('cartons.index'))
         ->assertOk()
-        ->assertSee('rowspan="2"', false)
-        ->assertSeeText('2 cartons')
-        ->assertSeeText($carton->order->order_number)
-        ->assertSeeText('Invoice: '.$carton->order->invoice_number);
+        ->assertJsonCount(2, 'data')
+        ->assertJsonPath('data.0.order_number', $carton->order->order_number)
+        ->assertJsonPath('data.0.invoice_number', $carton->order->invoice_number);
 
-    $this->get(route('cartons.index', ['q' => $carton->order->invoice_number]))
-        ->assertOk()
-        ->assertSee($carton->carton_number)
-        ->assertSee($secondCarton->carton_number);
-
-    $this->get(route('cartons.index', ['q' => $carton->order->order_number]))
-        ->assertOk()
-        ->assertSee($carton->carton_number)
-        ->assertSee($secondCarton->carton_number);
+    foreach ([$carton->order->invoice_number, $carton->order->order_number] as $search) {
+        $this->getJson(route('cartons.index', ['q' => $search]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['carton_number' => $carton->carton_number])
+            ->assertJsonFragment(['carton_number' => $secondCarton->carton_number]);
+    }
 });
 
 it('shows the cross-check workflow in physical, contents, and decision order', function (): void {

@@ -9,30 +9,68 @@ use App\Enums\CartonStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Carton;
 use App\Models\LabelPrintJob;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class CartonController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
-        $counts = Carton::query()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-        $cartons = Carton::query()->with(['order', 'cartonType'])->withCount('labelPrints')
-            ->when($request->string('status')->toString(), fn ($query, string $status) => $query->where('status', $status))
-            ->when($request->string('q')->trim()->toString(), fn ($query, string $search) => $query->where(function ($inner) use ($search): void {
-                $inner->where('carton_number', 'like', "%{$search}%")
-                    ->orWhere('seal_number', 'like', "%{$search}%")
-                    ->orWhereHas('order', fn ($orderQuery) => $orderQuery
-                        ->where('order_number', 'like', "%{$search}%")
-                        ->orWhere('invoice_number', 'like', "%{$search}%"));
-            }))
-            ->orderByDesc('order_id')->orderByDesc('id')->paginate(25)->withQueryString();
+        $search = $request->string('q')->trim()->toString();
+        $status = $request->string('status')->toString();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $query = Carton::query()->with(['order:id,order_number,invoice_number', 'cartonType:id,name'])->withCount('labelPrints')
+                ->when($status, fn ($builder, string $status) => $builder->where('status', $status))
+                ->when($search, fn ($builder, string $search) => $this->matchingSearch($builder, $search))
+                ->orderByDesc('order_id')->orderByDesc('id');
+
+            return DataTables::eloquent($query)
+                ->with('counts', $this->statusCounts($search))
+                ->addColumn('order_number', fn (Carton $carton): string => $carton->order->order_number)
+                ->addColumn('invoice_number', fn (Carton $carton): ?string => $carton->order->invoice_number)
+                ->addColumn('carton_type_name', fn (Carton $carton): string => $carton->cartonType?->name ?? '—')
+                ->editColumn('unit_count', fn (Carton $carton): string => rtrim(rtrim(number_format((float) $carton->unit_count, 3, '.', ''), '0'), '.'))
+                ->editColumn('system_weight_g', fn (Carton $carton): string => number_format((float) $carton->system_weight_g, 1).' g')
+                ->addColumn('created', fn (Carton $carton): string => $carton->created_at->format('m/d/Y, g:i A'))
+                ->editColumn('status', fn (Carton $carton): string => str_replace('_', ' ', $carton->status->value))
+                ->editColumn('weight_flag', fn (Carton $carton): ?string => $carton->weight_flag ? ucfirst(strtolower($carton->weight_flag)) : null)
+                ->addColumn('show_url', fn (Carton $carton): string => route('cartons.show', $carton))
+                ->addColumn('print_url', fn (Carton $carton): string => route('cartons.label-print', $carton))
+                ->toJson();
+        }
 
         return view('admin.package-station.cartons', [
-            'cartons' => $cartons, 'counts' => $counts, 'activeStatus' => $request->string('status')->toString(), 'labelConfig' => config('packaging.label'),
+            'counts' => $this->statusCounts($search), 'activeStatus' => $status, 'labelConfig' => config('packaging.label'),
         ]);
+    }
+
+    /**
+     * Carton totals per status for the tab badges, narrowed by the search text only.
+     *
+     * @return array<string, int>
+     */
+    private function statusCounts(string $search): array
+    {
+        return Carton::query()
+            ->when($search, fn ($builder, string $search) => $this->matchingSearch($builder, $search))
+            ->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->all();
+    }
+
+    /** Cartons whose number, seal, or order / invoice number contains the search text. */
+    private function matchingSearch(Builder $builder, string $search): Builder
+    {
+        return $builder->where(function (Builder $inner) use ($search): void {
+            $inner->where('carton_number', 'like', "%{$search}%")
+                ->orWhere('seal_number', 'like', "%{$search}%")
+                ->orWhereHas('order', fn ($orderQuery) => $orderQuery
+                    ->where('order_number', 'like', "%{$search}%")
+                    ->orWhere('invoice_number', 'like', "%{$search}%"));
+        });
     }
 
     public function show(Carton $carton): View

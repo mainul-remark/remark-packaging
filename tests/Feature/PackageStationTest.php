@@ -6,12 +6,14 @@ use App\Models\Order;
 use App\Models\PackagingMaterial;
 use App\Models\User;
 use Database\Seeders\PackagingDemoSeeder;
+use Database\Seeders\RoleTableSeeder;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(function (): void {
     $this->seed(PackagingDemoSeeder::class);
-    $this->actingAs(User::factory()->create());
+    $this->seed(RoleTableSeeder::class);
+    $this->actingAs(User::factory()->create()->assignRole('administrator'));
     $this->order = Order::query()->where('order_number', 'SO-1001')->firstOrFail();
     $this->riceLine = $this->order->items()->where('original_sku', 'RICE-1KG')->firstOrFail();
 });
